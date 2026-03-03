@@ -10,6 +10,10 @@ const errorMsg = document.getElementById('add-error');
 const inputEl = document.getElementById('stream-input');
 const gapSize = 2; // px
 
+// ── Stream Groups ───────────────────────────────────────────
+let streamGroups = JSON.parse(localStorage.getItem('streamGroups') || '[]');
+let expandedGroups = new Set(); // track which group IDs are expanded
+
 // Sidebar toggle logic
 const sidebar = document.getElementById('sidebar');
 const openSidebarBtn = document.getElementById('open-sidebar-btn');
@@ -212,8 +216,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const gridSizeSlider = document.getElementById('grid-size-slider');
     const gridSizeValue = document.getElementById('grid-size-value');
     if (gridSizeSlider) {
+        // Load saved grid size
+        const savedGridSize = localStorage.getItem('gridAreaSize');
+        if (savedGridSize) {
+            gridSizeSlider.value = savedGridSize;
+            if (gridSizeValue) gridSizeValue.textContent = savedGridSize;
+        }
+
         gridSizeSlider.addEventListener('input', () => {
             if (gridSizeValue) gridSizeValue.textContent = gridSizeSlider.value;
+            // Save grid size
+            localStorage.setItem('gridAreaSize', gridSizeSlider.value);
             resizeStreams();
         });
     }
@@ -518,8 +531,228 @@ function updateStreamsIframes() {
 function renderApp() {
     updateStreamListUI();
     updateStreamsIframes();
+    renderGroupsUI();
 }
 
 // Init
 renderApp();
 resizeStreams();
+
+// ═══════════════════════════════════════════════════════════
+// Stream Groups
+// ═══════════════════════════════════════════════════════════
+function saveGroupsToStorage() {
+    localStorage.setItem('streamGroups', JSON.stringify(streamGroups));
+}
+
+function openSaveGroupModal() {
+    const twitchStreams = activeStreams.filter(s => s.type === 'twitch');
+    if (twitchStreams.length === 0) {
+        // Re-use the add-error element briefly to show feedback
+        const err = document.getElementById('add-error');
+        err.textContent = 'No Twitch streams to save.';
+        setTimeout(() => { err.textContent = ''; }, 2500);
+        return;
+    }
+    const modal = document.getElementById('save-group-modal');
+    const input = document.getElementById('group-name-input');
+    const errEl = document.getElementById('group-name-error');
+    input.value = '';
+    errEl.textContent = '';
+    modal.style.display = 'flex';
+    setTimeout(() => input.focus(), 50);
+}
+
+function closeSaveGroupModal() {
+    document.getElementById('save-group-modal').style.display = 'none';
+}
+
+function confirmSaveGroup() {
+    const input = document.getElementById('group-name-input');
+    const errEl = document.getElementById('group-name-error');
+    const name = input.value.trim();
+    if (!name) {
+        errEl.textContent = 'Please enter a group name.';
+        return;
+    }
+    const twitchStreams = activeStreams
+        .filter(s => s.type === 'twitch')
+        .map(s => ({ type: s.type, id: s.id, label: s.label }));
+
+    const group = {
+        id: Date.now().toString(),
+        name,
+        streams: twitchStreams,
+    };
+    streamGroups.push(group);
+    saveGroupsToStorage();
+    closeSaveGroupModal();
+    renderGroupsUI();
+}
+
+function deleteGroup(groupId) {
+    streamGroups = streamGroups.filter(g => g.id !== groupId);
+    expandedGroups.delete(groupId);
+    saveGroupsToStorage();
+    renderGroupsUI();
+}
+
+function loadGroup(groupId) {
+    const group = streamGroups.find(g => g.id === groupId);
+    if (!group) return;
+    // Overwrite active streams with group streams
+    activeStreams.length = 0;
+    focusedStreamId = null;
+    twitchPlayers.clear();
+    group.streams.forEach(s => {
+        activeStreams.push({ ...s, uid: Date.now().toString() + Math.random() });
+    });
+    renderApp();
+    resizeStreams();
+}
+
+function addStreamFromGroup(stream) {
+    if (activeStreams.some(s => s.type === stream.type && s.id === stream.id)) return;
+    activeStreams.push({ ...stream, uid: Date.now().toString() + Math.random() });
+    renderApp();
+    resizeStreams();
+}
+
+function renderGroupsUI() {
+    const list = document.getElementById('groups-list');
+    const noMsg = document.getElementById('no-groups-msg');
+    if (!list) return;
+    list.innerHTML = '';
+
+    if (streamGroups.length === 0) {
+        noMsg.style.display = 'block';
+        return;
+    }
+    noMsg.style.display = 'none';
+
+    streamGroups.forEach(group => {
+        const isExpanded = expandedGroups.has(group.id);
+
+        // Group row (clickable header)
+        const groupEl = document.createElement('div');
+        groupEl.className = 'group-item';
+
+        const header = document.createElement('div');
+        header.className = 'group-header';
+
+        const chevron = document.createElement('i');
+        chevron.className = `fa-solid ${isExpanded ? 'fa-chevron-down' : 'fa-chevron-right'} group-chevron`;
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'group-name';
+        nameSpan.textContent = group.name;
+
+        const countBadge = document.createElement('span');
+        countBadge.className = 'group-count-badge';
+        countBadge.textContent = group.streams.length;
+
+        const headerActions = document.createElement('div');
+        headerActions.className = 'group-header-actions';
+
+        // Load (overwrite) button
+        const loadBtn = document.createElement('button');
+        loadBtn.className = 'group-action-btn group-load-btn';
+        loadBtn.title = 'Load group (replaces current streams)';
+        loadBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        loadBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            loadGroup(group.id);
+        });
+
+        // Delete button
+        const delBtn = document.createElement('button');
+        delBtn.className = 'group-action-btn group-delete-btn';
+        delBtn.title = 'Delete group';
+        delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+        delBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteGroup(group.id);
+        });
+
+        headerActions.appendChild(loadBtn);
+        headerActions.appendChild(delBtn);
+
+        const leftSide = document.createElement('div');
+        leftSide.className = 'group-header-left';
+        leftSide.appendChild(chevron);
+        leftSide.appendChild(nameSpan);
+        leftSide.appendChild(countBadge);
+
+        header.appendChild(leftSide);
+        header.appendChild(headerActions);
+
+        // Toggle expand on header click
+        header.addEventListener('click', () => {
+            if (expandedGroups.has(group.id)) {
+                expandedGroups.delete(group.id);
+            } else {
+                expandedGroups.add(group.id);
+            }
+            renderGroupsUI();
+        });
+
+        groupEl.appendChild(header);
+
+        // Stream list inside group (shown when expanded)
+        if (isExpanded) {
+            const streamList = document.createElement('div');
+            streamList.className = 'group-stream-list';
+
+            if (group.streams.length === 0) {
+                const emptyNote = document.createElement('div');
+                emptyNote.className = 'group-empty-note';
+                emptyNote.textContent = 'No streams in this group.';
+                streamList.appendChild(emptyNote);
+            } else {
+                group.streams.forEach(stream => {
+                    const row = document.createElement('div');
+                    row.className = 'group-stream-row';
+
+                    const info = document.createElement('div');
+                    info.className = 'group-stream-info';
+
+                    const icon = document.createElement('i');
+                    icon.className = 'fa-brands fa-twitch';
+
+                    const label = document.createElement('span');
+                    label.textContent = stream.label;
+
+                    info.appendChild(icon);
+                    info.appendChild(label);
+
+                    const addBtn = document.createElement('button');
+                    addBtn.className = 'group-stream-add-btn';
+                    addBtn.title = `Add ${stream.label} to current streams`;
+                    addBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
+                    addBtn.addEventListener('click', () => addStreamFromGroup(stream));
+
+                    row.appendChild(info);
+                    row.appendChild(addBtn);
+                    streamList.appendChild(row);
+                });
+            }
+
+            groupEl.appendChild(streamList);
+        }
+
+        list.appendChild(groupEl);
+    });
+}
+
+// Modal event wiring
+document.getElementById('save-group-btn').addEventListener('click', openSaveGroupModal);
+document.getElementById('modal-cancel-btn').addEventListener('click', closeSaveGroupModal);
+document.getElementById('modal-save-btn').addEventListener('click', confirmSaveGroup);
+document.getElementById('group-name-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') confirmSaveGroup();
+    if (e.key === 'Escape') closeSaveGroupModal();
+});
+// Click outside modal box to dismiss
+document.getElementById('save-group-modal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('save-group-modal')) closeSaveGroupModal();
+});
