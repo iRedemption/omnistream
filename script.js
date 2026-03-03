@@ -21,13 +21,37 @@ const closeSidebarBtn = document.getElementById('close-sidebar-btn');
 
 openSidebarBtn.addEventListener('click', () => {
     sidebar.classList.remove('collapsed');
-    setTimeout(resizeStreams, 300); // Wait for transition
+    document.body.classList.add('sidebar-open');
 });
 
 closeSidebarBtn.addEventListener('click', () => {
     sidebar.classList.add('collapsed');
-    setTimeout(resizeStreams, 300); // Wait for transition
+    document.body.classList.remove('sidebar-open');
 });
+
+// Sidebar Position logic
+const sidebarSideSelect = document.getElementById('sidebar-side-select');
+
+function applySidebarSide(side) {
+    if (side === 'right') {
+        sidebar.classList.add('side-right');
+        openSidebarBtn.classList.add('float-btn-right');
+    } else {
+        sidebar.classList.remove('side-right');
+        openSidebarBtn.classList.remove('float-btn-right');
+    }
+}
+
+const savedSidebarSide = localStorage.getItem('sidebarSide') || 'left';
+if (sidebarSideSelect) {
+    sidebarSideSelect.value = savedSidebarSide;
+    applySidebarSide(savedSidebarSide);
+    sidebarSideSelect.addEventListener('change', (e) => {
+        const side = e.target.value;
+        localStorage.setItem('sidebarSide', side);
+        applySidebarSide(side);
+    });
+}
 
 function extractYouTubeId(str) {
     // 1. Standard watch URL with robust parameter matching anywhere in the string
@@ -534,7 +558,10 @@ function renderApp() {
     renderGroupsUI();
 }
 
-// Init
+// Init — sidebar starts open, so mark body accordingly
+if (!sidebar.classList.contains('collapsed')) {
+    document.body.classList.add('sidebar-open');
+}
 renderApp();
 resizeStreams();
 
