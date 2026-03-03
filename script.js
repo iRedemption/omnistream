@@ -23,13 +23,43 @@ closeSidebarBtn.addEventListener('click', () => {
     setTimeout(resizeStreams, 300); // Wait for transition
 });
 
+function extractYouTubeId(str) {
+    // 1. Standard watch URL with robust parameter matching anywhere in the string
+    const vMatch = str.match(/[?&]v=([a-zA-Z0-9_-]{11})(?:&|$)/i);
+    if (vMatch) return vMatch[1];
+
+    // 2. Short URL
+    const shortMatch = str.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/i);
+    if (shortMatch) return shortMatch[1];
+
+    // 3. Live URL
+    const liveMatch = str.match(/youtube\.com\/live\/([a-zA-Z0-9_-]{11})/i);
+    if (liveMatch) return liveMatch[1];
+
+    // 4. Embed URL
+    const embedMatch = str.match(/youtube\.com\/(?:v|embed)\/([a-zA-Z0-9_-]{11})/i);
+    if (embedMatch) return embedMatch[1];
+
+    // 5. Shorts URL
+    const shortsMatch = str.match(/youtube\.com\/shorts\/([a-zA-Z0-9_-]{11})/i);
+    if (shortsMatch) return shortsMatch[1];
+
+    return null;
+}
+
 function parseStreamInput(input) {
     input = input.trim();
     if (!input) return null;
 
-    let ytMatch = input.match(/(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=|live\/)|youtu\.be\/)([^"&?\/\s]{11})/i);
-    if (ytMatch && ytMatch[1]) {
-        return { type: 'youtube', id: ytMatch[1], label: `YT: ${ytMatch[1]}` };
+    // If user pasted an <iframe> block, extract the src URL from it first
+    const iframeSrcMatch = input.match(/src=["']([^"']+youtube[^"']+)["']/i);
+    if (iframeSrcMatch) {
+        input = iframeSrcMatch[1];
+    }
+
+    const ytId = extractYouTubeId(input);
+    if (ytId) {
+        return { type: 'youtube', id: ytId, label: `YT: ${ytId}` };
     }
 
     let twitchMatch = input.match(/(?:twitch\.tv\/)([a-zA-Z0-9_]+)/i);
@@ -350,6 +380,9 @@ function updateStreamsIframes() {
     });
 
     const parentHostname = window.location.hostname || "localhost";
+    const originUrl = (window.location.origin && window.location.origin !== 'null')
+        ? window.location.origin
+        : "http://localhost"; // Fallback origin for local files
 
     activeStreams.forEach(stream => {
         if (!currentIframes.has(stream.uid)) {
@@ -361,9 +394,10 @@ function updateStreamsIframes() {
             iframe.allowFullscreen = true;
 
             if (stream.type === 'twitch') {
-                iframe.src = `https://player.twitch.tv/?channel=${stream.id}&parent=${parentHostname}&parent=127.0.0.1&muted=false`;
+                iframe.src = `https://player.twitch.tv/?channel=${stream.id}&parent=${parentHostname}&parent=127.0.0.1&muted=true`;
             } else if (stream.type === 'youtube') {
-                iframe.src = `https://www.youtube.com/embed/${stream.id}?autoplay=1`;
+                // Fixed: Appended &mute=1 to prevent browser autoplay blocks, and explicitly set the origin to prevent API conflicts
+                iframe.src = `https://www.youtube.com/embed/${stream.id}?autoplay=1&mute=1&playsinline=1&origin=${encodeURIComponent(originUrl)}`;
             }
 
             iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen');
