@@ -2,7 +2,7 @@
 
 Watch multiple Twitch and YouTube streams in one place with a focus on your favorite POV.
 
-<video src="assets/omnistream-showcase-2x.mp4" width="100%" controls autoplay loop muted></video>
+![Omnistream Showcase](assets/omnistream-showcase-2x.gif)
 
 ### Use it here: [iredemption.github.io/omnistream/](https://iredemption.github.io/omnistream/)
 
