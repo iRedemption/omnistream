@@ -40,12 +40,6 @@
             <div class="sidebar-section">
                 <h3><i class="fa-solid fa-sliders"></i> Controls</h3>
                 <div class="controls-row">
-                    <button id="clear-all-btn" class="control-btn" title="Clear all streams">
-                        <i class="fa-solid fa-trash" style="color:#ff6b6b;"></i>
-                    </button>
-                    <button id="fullscreen-btn" class="control-btn" title="Toggle Fullscreen">
-                        <i class="fa-solid fa-expand"></i>
-                    </button>
                     <!-- other mock buttons for visual resemblance -->
                     <button class="control-btn"><i class="fa-solid fa-volume-xmark"></i></button>
                     <button id="pause-all-btn" class="control-btn" title="Pause/Unpause all streams"><i
@@ -103,9 +97,13 @@
 
             <div class="sidebar-section">
                 <div class="section-header-row">
-                    <h3><i class="fa-solid fa-list-ul"></i> Active Streams (<span id="stream-count">0</span>)</h3>
-                    <button id="save-group-btn" class="save-group-btn" title="Save current Twitch streams as a group"><i
-                            class="fa-solid fa-bookmark"></i></button>
+                    <h3><i class="fa-solid fa-list-ul"></i> Active Streams</h3>
+                    <div class="section-actions">
+                        <button id="clear-all-btn" class="clear-all-btn" title="Clear all streams"><i
+                                class="fa-solid fa-trash"></i></button>
+                        <button id="save-group-btn" class="save-group-btn"
+                            title="Save current Twitch streams as a group"><i class="fa-solid fa-bookmark"></i></button>
+                    </div>
                 </div>
                 <ul id="active-streams-list" class="stream-list">
                     <!-- Stream list items rendered dynamically -->
@@ -123,8 +121,13 @@
         </aside>
 
         <main id="main-content" class="main-content">
-            <button id="open-sidebar-btn" class="float-btn" title="Open Settings"><i
-                    class="fa-solid fa-sliders"></i></button>
+            <div id="floating-controls" class="floating-controls">
+                <button id="open-sidebar-btn" class="float-btn" title="Open Settings"><i
+                        class="fa-solid fa-sliders"></i></button>
+                <button id="fullscreen-btn" class="float-btn" title="Toggle Fullscreen">
+                    <i class="fa-solid fa-expand"></i>
+                </button>
+            </div>
             <div id="content-area" class="content-area">
                 <div id="streams-container" class="streams-container">
                     <!-- Iframes inserted here -->

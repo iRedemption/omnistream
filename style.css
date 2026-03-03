@@ -363,11 +363,26 @@ body {
     width: 100%;
 }
 
-.float-btn {
+.floating-controls {
     position: absolute;
     top: 20px;
     left: 20px;
-    right: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 50;
+    padding: 40px;
+    /* Hitbox area */
+    margin: -40px;
+    /* Offset hitbox */
+}
+
+.floating-controls.side-right {
+    left: auto;
+    right: 20px;
+}
+
+.float-btn {
     background: rgba(46, 46, 54, 0.8);
     backdrop-filter: blur(8px);
     border: 1px solid rgba(255, 255, 255, 0.1);
@@ -379,31 +394,30 @@ body {
     justify-content: center;
     align-items: center;
     cursor: pointer;
-    z-index: 50;
     transition: opacity 0.3s, transform 0.2s, background 0.2s;
+    opacity: 0;
+}
+
+.floating-controls:hover .float-btn {
+    opacity: 1;
 }
 
 .float-btn:hover {
     background: rgba(60, 60, 70, 0.9);
 }
 
-.sidebar:not(.collapsed)~.main-content .float-btn {
-    opacity: 0;
+/* Hide when sidebar is open */
+body.sidebar-open .floating-controls {
     pointer-events: none;
+}
+
+body.sidebar-open .float-btn {
+    opacity: 0 !important;
     transform: scale(0.9);
 }
 
 /* Since sidebar is now fixed (out of flow), use a body class to hide the open btn */
-body.sidebar-open .float-btn {
-    opacity: 0;
-    pointer-events: none;
-    transform: scale(0.9);
-}
-
-.float-btn.float-btn-right {
-    left: auto;
-    right: 20px;
-}
+/* Body class handles the hide/show logic via floating-controls above */
 
 /* Streams Container */
 .streams-container {
@@ -544,6 +558,33 @@ body.sidebar-open .float-btn {
 
 .section-header-row h3 {
     margin-bottom: 0;
+}
+
+.section-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.clear-all-btn {
+    background: rgba(255, 107, 107, 0.12);
+    color: #ff6b6b;
+    border: 1px solid rgba(255, 107, 107, 0.2);
+    border-radius: 6px;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 13px;
+    transition: all 0.2s;
+}
+
+.clear-all-btn:hover {
+    background: #ff6b6b;
+    color: white;
+    border-color: transparent;
 }
 
 .save-group-btn {

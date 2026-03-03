@@ -4,7 +4,6 @@ let isAllPaused = false;
 let focusedStreamId = null;
 const streamsContainer = document.getElementById('streams-container');
 const streamListEl = document.getElementById('active-streams-list');
-const streamCountEl = document.getElementById('stream-count');
 const noStreamsMsg = document.getElementById('no-streams-msg');
 const errorMsg = document.getElementById('add-error');
 const inputEl = document.getElementById('stream-input');
@@ -37,12 +36,13 @@ closeSidebarBtn.addEventListener('click', () => {
 const sidebarSideSelect = document.getElementById('sidebar-side-select');
 
 function applySidebarSide(side) {
+    const floatingControls = document.getElementById('floating-controls');
     if (side === 'right') {
         sidebar.classList.add('side-right');
-        openSidebarBtn.classList.add('float-btn-right');
+        if (floatingControls) floatingControls.classList.add('side-right');
     } else {
         sidebar.classList.remove('side-right');
-        openSidebarBtn.classList.remove('float-btn-right');
+        if (floatingControls) floatingControls.classList.remove('side-right');
     }
 }
 
@@ -150,14 +150,21 @@ function removeStream(uid) {
     }
 }
 
-document.getElementById('clear-all-btn').addEventListener('click', () => {
-    activeStreams.length = 0;
-    focusedStreamId = null;
-    isAllPaused = false;
-    twitchPlayers.clear();
-    updatePauseButtonIcon();
-    renderApp();
-});
+// Delete all streams
+const clearAllBtn = document.getElementById('clear-all-btn');
+if (clearAllBtn) {
+    clearAllBtn.addEventListener('click', () => {
+        if (activeStreams.length === 0) return;
+        if (confirm('Are you sure you want to clear all active streams?')) {
+            activeStreams.length = 0;
+            focusedStreamId = null;
+            isAllPaused = false;
+            twitchPlayers.clear();
+            updatePauseButtonIcon();
+            renderApp();
+        }
+    });
+}
 
 const pauseAllBtn = document.getElementById('pause-all-btn');
 if (pauseAllBtn) {
@@ -470,7 +477,6 @@ window.addEventListener('resize', () => {
 });
 
 function updateStreamListUI() {
-    streamCountEl.textContent = activeStreams.length;
     streamListEl.innerHTML = '';
 
     if (activeStreams.length === 0) {
