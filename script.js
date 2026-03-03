@@ -451,7 +451,17 @@ function resizeStreams() {
         const availableW = W - 2 * gapSize;
         const availableH = H - 2 * gapSize;
 
-        if (layoutMode === 'bottom') {
+        if (layoutMode === 'top') {
+            gridArea.h = availableH * gridPercent;
+            gridArea.w = availableW;
+            gridArea.x = gapSize;
+            gridArea.y = gapSize;
+
+            focusArea.w = availableW;
+            focusArea.h = availableH - gridArea.h - gapSize;
+            focusArea.x = gapSize;
+            focusArea.y = gapSize + gridArea.h + gapSize;
+        } else if (layoutMode === 'bottom') {
             gridArea.h = availableH * gridPercent;
             gridArea.w = availableW;
             gridArea.x = gapSize;
