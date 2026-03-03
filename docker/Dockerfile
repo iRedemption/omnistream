@@ -9,13 +9,15 @@ FROM nginx:alpine
 RUN rm -rf /usr/share/nginx/html/*
 
 # Copy all static assets into Nginx's web root
-COPY index.html   /usr/share/nginx/html/
-COPY style.css    /usr/share/nginx/html/
-COPY script.js    /usr/share/nginx/html/
-COPY omnistream.png /usr/share/nginx/html/
+# Note: the build context is the project root (set in docker-compose.yml),
+# so all paths here are relative to the repo root, not this docker/ folder.
+COPY index.html               /usr/share/nginx/html/
+COPY assets/omnistream.png    /usr/share/nginx/html/assets/
+COPY css/                     /usr/share/nginx/html/css/
+COPY js/                      /usr/share/nginx/html/js/
 
 # Copy our custom Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
 
 # Expose HTTP port
 EXPOSE 80
