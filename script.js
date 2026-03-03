@@ -118,6 +118,32 @@ document.getElementById('clear-all-btn').addEventListener('click', () => {
     renderApp();
 });
 
+const fullscreenBtn = document.getElementById('fullscreen-btn');
+fullscreenBtn.addEventListener('click', () => {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            console.error(`Error attempting to enable full-screen mode: ${err.message}`);
+        });
+        fullscreenBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
+    } else {
+        if (document.exitFullscreen) {
+            document.exitFullscreen();
+            fullscreenBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+        }
+    }
+});
+
+// Update icon when fullscreen state changes (e.g. via Esc key)
+document.addEventListener('fullscreenchange', () => {
+    if (!document.fullscreenElement) {
+        fullscreenBtn.innerHTML = '<i class="fa-solid fa-expand"></i>';
+    } else {
+        fullscreenBtn.innerHTML = '<i class="fa-solid fa-compress"></i>';
+    }
+    // Small delay to let the browser finish the transition before resizing
+    setTimeout(resizeStreams, 100);
+});
+
 document.addEventListener('DOMContentLoaded', () => {
     const focusedModeSelect = document.getElementById('focused-mode-select');
     if (focusedModeSelect) {
