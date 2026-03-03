@@ -1,7 +1,7 @@
 :root {
     --bg-color: #000000;
-    --sidebar-bg: #1c1c22;
-    --sidebar-border: #2e2e36;
+    --sidebar-bg: rgba(28, 28, 34, 0.75);
+    --sidebar-border: rgba(255, 255, 255, 0.1);
     --text-primary: #efeff1;
     --text-muted: #adadb8;
     --accent: #a970ff;
@@ -39,12 +39,15 @@ body {
     width: var(--sidebar-width);
     height: 100%;
     background-color: var(--sidebar-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     border-right: 1px solid var(--sidebar-border);
     display: flex;
     flex-direction: column;
     transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     z-index: 100;
     overflow-y: auto;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
 }
 
 .sidebar.collapsed {
@@ -128,7 +131,7 @@ body {
 /* Input Group */
 .input-group {
     display: flex;
-    background: #18181b;
+    background: rgba(24, 24, 27, 0.6);
     border: 1px solid var(--sidebar-border);
     border-radius: 6px;
     overflow: hidden;
@@ -143,7 +146,7 @@ body {
     align-items: center;
     justify-content: center;
     padding: 0 12px;
-    background: #1e1e24;
+    background: rgba(30, 30, 36, 0.6);
     border-right: 1px solid var(--sidebar-border);
     font-size: 16px;
 }
@@ -189,7 +192,7 @@ body {
 
 .control-btn {
     flex: 1;
-    background: #2e2e36;
+    background: rgba(46, 46, 54, 0.6);
     border: none;
     color: var(--text-primary);
     padding: 8px 0;
@@ -224,7 +227,7 @@ body {
 }
 
 .control-group select {
-    background: #18181b;
+    background: rgba(24, 24, 27, 0.6);
     color: white;
     border: 1px solid var(--sidebar-border);
     padding: 8px;
@@ -274,10 +277,11 @@ body {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: #2e2e36;
+    background: rgba(46, 46, 54, 0.6);
     padding: 10px 12px;
     border-radius: 6px;
     font-size: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .stream-item-info {
@@ -476,7 +480,7 @@ body.sidebar-open .float-btn {
     border-radius: 8px;
     overflow: hidden;
     border: 1px solid var(--sidebar-border);
-    background: #18181b;
+    background: rgba(24, 24, 27, 0.6);
 }
 
 .group-header {
@@ -663,7 +667,9 @@ body.sidebar-open .float-btn {
 }
 
 .modal-box {
-    background: #1c1c22;
+    background: rgba(28, 28, 34, 0.85);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
     border: 1px solid var(--sidebar-border);
     border-radius: 14px;
     padding: 28px 28px 24px;

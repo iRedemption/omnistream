@@ -231,11 +231,21 @@ document.addEventListener('fullscreenchange', () => {
 document.addEventListener('DOMContentLoaded', () => {
     const focusedModeSelect = document.getElementById('focused-mode-select');
     if (focusedModeSelect) {
-        focusedModeSelect.addEventListener('change', resizeStreams);
+        const savedFocusedMode = localStorage.getItem('focusedMode') || 'bottom';
+        focusedModeSelect.value = savedFocusedMode;
+        focusedModeSelect.addEventListener('change', (e) => {
+            localStorage.setItem('focusedMode', e.target.value);
+            resizeStreams();
+        });
     }
     const alignmentSelect = document.getElementById('alignment-select');
     if (alignmentSelect) {
-        alignmentSelect.addEventListener('change', resizeStreams);
+        const savedAlignment = localStorage.getItem('alignmentMode') || 'center';
+        alignmentSelect.value = savedAlignment;
+        alignmentSelect.addEventListener('change', (e) => {
+            localStorage.setItem('alignmentMode', e.target.value);
+            resizeStreams();
+        });
     }
     const gridSizeSlider = document.getElementById('grid-size-slider');
     const gridSizeValue = document.getElementById('grid-size-value');
@@ -301,15 +311,26 @@ function resizeStreams() {
             }
         }
 
-        const gridW = bestCols * bestW + (bestCols - 1) * gapSize;
         const gridH = bestRows * bestH + (bestRows - 1) * gapSize;
-        const startX = (W - gridW) / 2;
-        const startY = alignMode === 'top' ? gapSize : (H - gridH) / 2;
+        const startY = (H - gridH) / 2;
 
         wrappers.forEach((item, i) => {
-            const col = i % bestCols;
             const row = Math.floor(i / bestCols);
-            const x = startX + col * (bestW + gapSize);
+            const col = i % bestCols;
+
+            const itemsInThisRow = Math.min(bestCols, num - row * bestCols);
+            const rowWidth = itemsInThisRow * bestW + (itemsInThisRow - 1) * gapSize;
+
+            let rowStartX;
+            if (alignMode === 'left') {
+                rowStartX = gapSize;
+            } else if (alignMode === 'right') {
+                rowStartX = W - rowWidth - gapSize;
+            } else {
+                rowStartX = (W - rowWidth) / 2;
+            }
+
+            const x = rowStartX + col * (bestW + gapSize);
             const y = startY + row * (bestH + gapSize);
 
             item.el.style.position = 'absolute';
@@ -407,15 +428,26 @@ function resizeStreams() {
                 }
             }
 
-            const gridW = bestCols * bestW + (bestCols - 1) * gapSize;
             const gridH = bestRows * bestH + (bestRows - 1) * gapSize;
-            const startX = gridArea.x + (gridArea.w - gridW) / 2;
-            const startY = alignMode === 'top' ? gridArea.y : gridArea.y + (gridArea.h - gridH) / 2;
+            const startY = gridArea.y + (gridArea.h - gridH) / 2;
 
             wrappers.forEach((item, i) => {
-                const col = i % bestCols;
                 const row = Math.floor(i / bestCols);
-                const x = startX + col * (bestW + gapSize);
+                const col = i % bestCols;
+
+                const itemsInThisRow = Math.min(bestCols, othersCount - row * bestCols);
+                const rowWidth = itemsInThisRow * bestW + (itemsInThisRow - 1) * gapSize;
+
+                let rowStartX;
+                if (alignMode === 'left') {
+                    rowStartX = gridArea.x;
+                } else if (alignMode === 'right') {
+                    rowStartX = gridArea.x + gridArea.w - rowWidth;
+                } else {
+                    rowStartX = gridArea.x + (gridArea.w - rowWidth) / 2;
+                }
+
+                const x = rowStartX + col * (bestW + gapSize);
                 const y = startY + row * (bestH + gapSize);
 
                 item.el.style.position = 'absolute';
