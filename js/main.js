@@ -111,11 +111,20 @@ inputEl.addEventListener('keydown', (e) => {
 const platformIconContainer = document.getElementById('platform-icon-container');
 if (platformIconContainer) {
     inputEl.addEventListener('input', () => {
-        const parsed = parseStreamInput(inputEl.value);
-        if (!parsed || parsed.type === 'twitch') {
-            platformIconContainer.innerHTML = '<i class="fa-brands fa-twitch" style="color: #a970ff;"></i>';
-        } else {
+        const val = inputEl.value.trim().toLowerCase();
+        const parsed = parseStreamInput(val);
+
+        let type = 'twitch';
+        if (parsed) {
+            type = parsed.type;
+        } else if (val.includes('youtube.com') || val.includes('youtu.be')) {
+            type = 'youtube';
+        }
+
+        if (type === 'youtube') {
             platformIconContainer.innerHTML = '<i class="fa-brands fa-youtube" style="color: #ff0000;"></i>';
+        } else {
+            platformIconContainer.innerHTML = '<i class="fa-brands fa-twitch" style="color: #a970ff;"></i>';
         }
     });
 }

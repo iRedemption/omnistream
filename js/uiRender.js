@@ -66,6 +66,19 @@ export function removeStream(uid) {
 }
 
 /**
+ * Reorder the activeStreams array and sync state.
+ * @param {number} oldIdx 
+ * @param {number} newIdx 
+ */
+export function reorderStreams(oldIdx, newIdx) {
+    if (oldIdx === newIdx) return;
+    const [moved] = activeStreams.splice(oldIdx, 1);
+    activeStreams.splice(newIdx, 0, moved);
+    updateUrlHash();
+    renderApp();
+}
+
+/**
  * Rebuild the #active-streams-list `<ul>` element.
  */
 export function updateStreamListUI() {
@@ -80,9 +93,23 @@ export function updateStreamListUI() {
 
     noStreamsMsg.style.display = 'none';
 
-    activeStreams.forEach(stream => {
+    activeStreams.forEach((stream, index) => {
         const li = document.createElement('li');
-        li.className = 'stream-item';
+        li.className = 'stream-item draggable-item';
+        li.setAttribute('draggable', 'true');
+        li.dataset.index = index;
+
+        // Drag & Drop Listeners
+        li.addEventListener('dragstart', streamDragStart);
+        li.addEventListener('dragover', streamDragOver);
+        li.addEventListener('dragleave', streamDragLeave);
+        li.addEventListener('drop', streamDrop);
+        li.addEventListener('dragend', streamDragEnd);
+
+        // Grip handle icon
+        const grip = document.createElement('i');
+        grip.className = 'fa-solid fa-grip-vertical drag-handle';
+        li.appendChild(grip);
 
         // Info (icon + label)
         const info = document.createElement('div');
@@ -437,6 +464,50 @@ export function handleAdd(parseStreamInput) {
 
     activeStreams.push({ ...parsed, uid: Date.now().toString() });
     inputEl.value = '';
+    const platformIconContainer = document.getElementById('platform-icon-container');
+    if (platformIconContainer) {
+        platformIconContainer.innerHTML = '<i class="fa-brands fa-twitch" style="color: #a970ff;"></i>';
+    }
     updateUrlHash();
     renderApp();
+}
+
+// ── Drag and Drop Handlers ───────────────────────────────
+
+let dragSrcIndex = null;
+
+function streamDragStart(e) {
+    dragSrcIndex = parseInt(this.dataset.index);
+    this.classList.add('dragging');
+    e.dataTransfer.effectAllowed = 'move';
+    // Required for Firefox
+    e.dataTransfer.setData('text/plain', dragSrcIndex);
+}
+
+function streamDragOver(e) {
+    if (e.preventDefault) e.preventDefault();
+    this.classList.add('drag-over');
+    e.dataTransfer.dropEffect = 'move';
+    return false;
+}
+
+function streamDragLeave() {
+    this.classList.remove('drag-over');
+}
+
+function streamDrop(e) {
+    if (e.stopPropagation) e.stopPropagation();
+    this.classList.remove('drag-over');
+
+    const targetIndex = parseInt(this.dataset.index);
+    if (dragSrcIndex !== targetIndex) {
+        reorderStreams(dragSrcIndex, targetIndex);
+    }
+    return false;
+}
+
+function streamDragEnd() {
+    this.classList.remove('dragging');
+    const items = document.querySelectorAll('.stream-item');
+    items.forEach(item => item.classList.remove('drag-over'));
 }
