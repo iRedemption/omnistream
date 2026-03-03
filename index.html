@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StreamCube</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <div id="app">
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <div class="cube-icon">
+                        <i class="fa-solid fa-cube"></i>
+                    </div>
+                    <span>StreamCube - Settings</span>
+                </div>
+                <button id="close-sidebar-btn" class="icon-btn" title="Close Sidebar"><i
+                        class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="sidebar-section">
+                <h3><i class="fa-solid fa-circle-plus"></i> Add Stream</h3>
+                <div class="input-group">
+                    <div class="platform-icon" id="platform-icon-container">
+                        <i class="fa-brands fa-twitch" style="color: #a970ff;"></i>
+                    </div>
+                    <input type="text" id="stream-input" placeholder="Channel name / URL" autocomplete="off">
+                    <button id="add-stream-btn" class="purple-btn" title="Add Stream"><i
+                            class="fa-solid fa-plus"></i></button>
+                </div>
+                <div id="add-error" class="error-msg"></div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3><i class="fa-solid fa-sliders"></i> Controls</h3>
+                <div class="controls-row">
+                    <button id="clear-all-btn" class="control-btn" title="Clear all streams">
+                        <i class="fa-solid fa-trash" style="color:#ff6b6b;"></i>
+                    </button>
+                    <!-- other mock buttons for visual resemblance -->
+                    <button class="control-btn"><i class="fa-solid fa-volume-xmark"></i></button>
+                    <button class="control-btn"><i class="fa-solid fa-pause"></i></button>
+                    <button class="control-btn"><i class="fa-solid fa-eye-slash"></i></button>
+                    <button class="control-btn"><i class="fa-solid fa-link"></i></button>
+                    <button class="control-btn"><i class="fa-solid fa-table-cells"></i></button>
+                </div>
+                <div class="layout-controls">
+                    <div class="control-group">
+                        <label>Columns</label>
+                        <select id="columns-select">
+                            <option value="auto">Auto</option>
+                            <option value="1">1 Column</option>
+                            <option value="2">2 Columns</option>
+                            <option value="3">3 Columns</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Alignment</label>
+                        <select id="alignment-select">
+                            <option value="center">Center</option>
+                            <option value="top">Top</option>
+                        </select>
+                    </div>
+                    <div class="control-group">
+                        <label>Focused Mode</label>
+                        <select id="focused-mode-select">
+                            <option value="bottom">Below</option>
+                            <option value="left">Left</option>
+                            <option value="right">Right</option>
+                        </select>
+                    </div>
+                    <div class="control-group" id="grid-size-group" style="display: none;">
+                        <label>Grid Area Size: <span id="grid-size-value">25</span>%</label>
+                        <input type="range" id="grid-size-slider" min="10" max="90" value="25" class="styled-slider">
+                    </div>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <h3><i class="fa-solid fa-list-ul"></i> Active Streams (<span id="stream-count">0</span>)</h3>
+                <ul id="active-streams-list" class="stream-list">
+                    <!-- Stream list items rendered dynamically -->
+                </ul>
+                <div id="no-streams-msg" class="empty-msg">No active streams.</div>
+            </div>
+        </aside>
+
+        <main id="main-content" class="main-content">
+            <button id="open-sidebar-btn" class="float-btn" title="Open Settings"><i
+                    class="fa-solid fa-sliders"></i></button>
+            <div id="streams-container" class="streams-container">
+                <!-- Iframes inserted here -->
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
