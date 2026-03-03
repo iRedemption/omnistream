@@ -1,0 +1,13 @@
+services:
+  omnistream:
+    build: .
+    container_name: omnistream
+    ports:
+      - "5500:80"
+    restart: unless-stopped
+    networks:
+      - omnistream-network
+
+networks:
+  omnistream-network:
+    driver: bridge
