@@ -1,0 +1,26 @@
+:root {
+    --bg-color: #000000;
+    --sidebar-bg: rgba(28, 28, 34, 0.75);
+    --sidebar-border: rgba(255, 255, 255, 0.1);
+    --text-primary: #efeff1;
+    --text-muted: #adadb8;
+    --accent: #a970ff;
+    --accent-hover: #9146ff;
+    --sidebar-width: 300px;
+    --gap: 2px;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', sans-serif;
+    color: var(--text-primary);
+    background-color: var(--bg-color);
+    overflow: hidden;
+    height: 100vh;
+    width: 100vw;
+}
