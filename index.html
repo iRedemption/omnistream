@@ -41,7 +41,29 @@
                 <div id="add-error" class="error-msg"></div>
             </div>
 
+            <div class="sidebar-section">
+                <div class="section-header-row">
+                    <h3><i class="fa-solid fa-list-ul"></i> Active Streams</h3>
+                    <div class="section-actions">
+                        <button id="clear-all-btn" class="clear-all-btn" title="Clear all streams"><i
+                                class="fa-solid fa-trash"></i></button>
+                        <button id="save-group-btn" class="save-group-btn"
+                            title="Save current Twitch streams as a group"><i class="fa-solid fa-bookmark"></i></button>
+                    </div>
+                </div>
+                <ul id="active-streams-list" class="stream-list">
+                    <!-- Stream list items rendered dynamically -->
+                </ul>
+                <div id="no-streams-msg" class="empty-msg">No active streams.</div>
+            </div>
 
+            <div class="sidebar-section" id="stream-groups-section">
+                <h3><i class="fa-solid fa-layer-group"></i> Stream Groups</h3>
+                <div id="groups-list" class="groups-list">
+                    <!-- Rendered dynamically -->
+                </div>
+                <div id="no-groups-msg" class="empty-msg">No saved groups yet.</div>
+            </div>
 
             <div class="sidebar-section">
                 <div class="section-header-row">
@@ -134,30 +156,6 @@
                         <input type="range" id="grid-size-slider" class="styled-slider" min="10" max="90" value="25">
                     </div>
                 </div>
-            </div>
-
-            <div class="sidebar-section">
-                <div class="section-header-row">
-                    <h3><i class="fa-solid fa-list-ul"></i> Active Streams</h3>
-                    <div class="section-actions">
-                        <button id="clear-all-btn" class="clear-all-btn" title="Clear all streams"><i
-                                class="fa-solid fa-trash"></i></button>
-                        <button id="save-group-btn" class="save-group-btn"
-                            title="Save current Twitch streams as a group"><i class="fa-solid fa-bookmark"></i></button>
-                    </div>
-                </div>
-                <ul id="active-streams-list" class="stream-list">
-                    <!-- Stream list items rendered dynamically -->
-                </ul>
-                <div id="no-streams-msg" class="empty-msg">No active streams.</div>
-            </div>
-
-            <div class="sidebar-section" id="stream-groups-section">
-                <h3><i class="fa-solid fa-layer-group"></i> Stream Groups</h3>
-                <div id="groups-list" class="groups-list">
-                    <!-- Rendered dynamically -->
-                </div>
-                <div id="no-groups-msg" class="empty-msg">No saved groups yet.</div>
             </div>
         </aside>
 
