@@ -57,7 +57,20 @@ closeSidebarBtn.addEventListener('click', collapseSidebar);
 if (overlay) overlay.addEventListener('click', collapseSidebar);
 
 // ── Sidebar Position ──────────────────────────────────────
-const sidebarSideSelect = document.getElementById('sidebar-side-select');
+const sidebarSideToggle = document.getElementById('sidebar-side-toggle');
+
+function updateToggleGroupUI(groupId, value) {
+    const group = document.getElementById(groupId);
+    if (!group) return;
+    const buttons = group.querySelectorAll('.toggle-btn');
+    buttons.forEach(btn => {
+        if (btn.dataset.value === value) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+}
 
 function applySidebarSide(side) {
     const floatingControls = document.getElementById('floating-controls');
@@ -71,13 +84,17 @@ function applySidebarSide(side) {
 }
 
 const savedSidebarSide = localStorage.getItem('sidebarSide') || 'left';
-if (sidebarSideSelect) {
-    sidebarSideSelect.value = savedSidebarSide;
+if (sidebarSideToggle) {
+    updateToggleGroupUI('sidebar-side-toggle', savedSidebarSide);
     applySidebarSide(savedSidebarSide);
-    sidebarSideSelect.addEventListener('change', (e) => {
-        const side = e.target.value;
+
+    sidebarSideToggle.addEventListener('click', (e) => {
+        const btn = e.target.closest('.toggle-btn');
+        if (!btn) return;
+        const side = btn.dataset.value;
         localStorage.setItem('sidebarSide', side);
         applySidebarSide(side);
+        updateToggleGroupUI('sidebar-side-toggle', side);
     });
 }
 
@@ -154,22 +171,30 @@ document.addEventListener('fullscreenchange', () => {
 // already fully parsed by the time this code runs. No DOMContentLoaded
 // wrapper is needed.
 
-const focusedModeSelect = document.getElementById('focused-mode-select');
-if (focusedModeSelect) {
+const focusedModeToggle = document.getElementById('focused-mode-toggle');
+if (focusedModeToggle) {
     const savedFocusedMode = localStorage.getItem('focusedMode') || 'bottom';
-    focusedModeSelect.value = savedFocusedMode;
-    focusedModeSelect.addEventListener('change', (e) => {
-        localStorage.setItem('focusedMode', e.target.value);
+    updateToggleGroupUI('focused-mode-toggle', savedFocusedMode);
+    focusedModeToggle.addEventListener('click', (e) => {
+        const btn = e.target.closest('.toggle-btn');
+        if (!btn) return;
+        const mode = btn.dataset.value;
+        localStorage.setItem('focusedMode', mode);
+        updateToggleGroupUI('focused-mode-toggle', mode);
         resizeStreams();
     });
 }
 
-const alignmentSelect = document.getElementById('alignment-select');
-if (alignmentSelect) {
+const alignmentToggle = document.getElementById('alignment-toggle');
+if (alignmentToggle) {
     const savedAlignment = localStorage.getItem('alignmentMode') || 'center';
-    alignmentSelect.value = savedAlignment;
-    alignmentSelect.addEventListener('change', (e) => {
-        localStorage.setItem('alignmentMode', e.target.value);
+    updateToggleGroupUI('alignment-toggle', savedAlignment);
+    alignmentToggle.addEventListener('click', (e) => {
+        const btn = e.target.closest('.toggle-btn');
+        if (!btn) return;
+        const align = btn.dataset.value;
+        localStorage.setItem('alignmentMode', align);
+        updateToggleGroupUI('alignment-toggle', align);
         resizeStreams();
     });
 }

@@ -45,15 +45,17 @@
 
             <div class="sidebar-section">
                 <div class="section-header-row">
-                    <h3><i class="fa-brands fa-twitch" style="color:#a970ff;"></i><i class="fa-brands fa-youtube"
-                            style="color:#ff0000;margin-left:5px;"></i>&nbsp;Chat</h3>
-                    <button id="chat-toggle-btn" class="chat-toggle-btn" title="Show/Hide Chat">
-                        <i class="fa-solid fa-comment"></i> Show
-                    </button>
+                    <h3><i class="fa-solid fa-comments"></i> Chat</h3>
+                    <div class="toggle-group">
+                        <button id="chat-toggle-btn" class="toggle-btn" title="Show/Hide Chat"
+                            style="padding: 5px 12px; gap: 6px;">
+                            <i class="fa-solid fa-comment"></i> Show
+                        </button>
+                    </div>
                 </div>
                 <div class="control-group">
                     <label>Chat Source</label>
-                    <select id="chat-stream-select">
+                    <select id="chat-stream-select" class="styled-select">
                         <option value="">-- Select a stream --</option>
                     </select>
                 </div>
@@ -64,27 +66,68 @@
                 <div class="layout-controls">
                     <div class="control-group">
                         <label>Sidebar Position</label>
-                        <select id="sidebar-side-select">
-                            <option value="left">Left Side</option>
-                            <option value="right">Right Side</option>
-                        </select>
+                        <div class="toggle-group" id="sidebar-side-toggle">
+                            <button class="toggle-btn" data-value="left" title="Left Side"><i
+                                    class="fa-solid fa-left-long"></i></button>
+                            <button class="toggle-btn" data-value="right" title="Right Side"><i
+                                    class="fa-solid fa-right-long"></i></button>
+                        </div>
                     </div>
                     <div class="control-group">
                         <label>Stream Alignment</label>
-                        <select id="alignment-select">
-                            <option value="left">Left</option>
-                            <option value="center">Center</option>
-                            <option value="right">Right</option>
-                        </select>
+                        <div class="toggle-group" id="alignment-toggle">
+                            <button class="toggle-btn" data-value="left" title="Align Left"><i
+                                    class="fa-solid fa-align-left"></i></button>
+                            <button class="toggle-btn" data-value="center" title="Align Center"><i
+                                    class="fa-solid fa-align-center"></i></button>
+                            <button class="toggle-btn" data-value="right" title="Align Right"><i
+                                    class="fa-solid fa-align-right"></i></button>
+                        </div>
                     </div>
                     <div class="control-group">
                         <label>Focus Mode Layout</label>
-                        <select id="focused-mode-select">
-                            <option value="top">Top</option>
-                            <option value="bottom">Bottom</option>
-                            <option value="left">Left</option>
-                            <option value="right">Right</option>
-                        </select>
+                        <div class="toggle-group" id="focused-mode-toggle">
+                            <button class="toggle-btn" data-value="top" title="Grid at Top">
+                                <svg class="toggle-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="3" width="4" height="4" rx="1" />
+                                    <rect x="10" y="3" width="4" height="4" rx="1" />
+                                    <rect x="18" y="3" width="4" height="4" rx="1" />
+                                    <rect x="2" y="11" width="20" height="10" rx="2" />
+                                </svg>
+                            </button>
+                            <button class="toggle-btn" data-value="bottom" title="Grid at Bottom">
+                                <svg class="toggle-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="3" width="20" height="10" rx="2" />
+                                    <rect x="2" y="17" width="4" height="4" rx="1" />
+                                    <rect x="10" y="17" width="4" height="4" rx="1" />
+                                    <rect x="18" y="17" width="4" height="4" rx="1" />
+                                </svg>
+                            </button>
+                            <button class="toggle-btn" data-value="left" title="Grid at Left">
+                                <svg class="toggle-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="2" width="4" height="4" rx="1" />
+                                    <rect x="2" y="10" width="4" height="4" rx="1" />
+                                    <rect x="2" y="18" width="4" height="4" rx="1" />
+                                    <rect x="10" y="2" width="12" height="20" rx="2" />
+                                </svg>
+                            </button>
+                            <button class="toggle-btn" data-value="right" title="Grid at Right">
+                                <svg class="toggle-icon" xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                    viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                                    stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="2" y="2" width="12" height="20" rx="2" />
+                                    <rect x="18" y="2" width="4" height="4" rx="1" />
+                                    <rect x="18" y="10" width="4" height="4" rx="1" />
+                                    <rect x="18" y="18" width="4" height="4" rx="1" />
+                                </svg>
+                            </button>
+                        </div>
                     </div>
                     <div class="control-group" id="grid-size-group" style="display: none;">
                         <label>Resize Focused Stream: <span id="grid-size-value">25</span>%</label>

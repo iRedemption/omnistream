@@ -120,15 +120,55 @@
     color: var(--text-muted);
 }
 
-.control-group select {
-    background: rgba(24, 24, 27, 0.6);
-    color: white;
+.toggle-group {
+    display: flex;
+    background: rgba(12, 12, 14, 0.4);
     border: 1px solid var(--sidebar-border);
-    padding: 8px;
+    border-radius: 8px;
+    padding: 3px;
+    gap: 3px;
+}
+
+.toggle-group.disabled {
+    opacity: 0.5;
+}
+
+.toggle-group.disabled .toggle-btn {
+    pointer-events: none;
+}
+
+.toggle-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 8px 0;
     border-radius: 6px;
-    outline: none;
-    font-family: inherit;
+    cursor: pointer;
     font-size: 14px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.toggle-btn:hover {
+    color: var(--text-primary);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.toggle-btn.active {
+    background: linear-gradient(135deg, #a970ff, #7c3aed);
+    color: white;
+    box-shadow: 0 4px 12px rgba(169, 112, 255, 0.35);
+}
+
+.toggle-btn i,
+.toggle-icon {
+    font-size: 13px;
+    /* width: 16px;
+    height: 16px;
+    stroke-width: 2.5; */
 }
 
 /* ── Slider ──────────────────────────────────────────────── */
@@ -315,34 +355,28 @@
     background: rgba(169, 112, 255, 0.12);
 }
 
-/* ── Chat Toggle Button ──────────────────────────────────── */
-.chat-toggle-btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background: rgba(169, 112, 255, 0.15);
-    color: var(--accent);
-    border: 1px solid rgba(169, 112, 255, 0.3);
-    border-radius: 6px;
-    padding: 5px 10px;
-    font-size: 11px;
+/* ── Dropdown Select ───────────────────────────────────────── */
+.styled-select {
+    width: 100%;
+    background: #111115;
+    border: 1px solid var(--sidebar-border);
+    border-radius: 8px;
+    color: var(--text-primary);
+    padding: 8px 12px;
+    font-size: 13px;
     font-family: inherit;
-    font-weight: 600;
+    outline: none;
     cursor: pointer;
-    transition: background 0.2s, border-color 0.2s, color 0.2s;
-    white-space: nowrap;
-    flex-shrink: 0;
+    transition: border-color 0.2s;
 }
 
-.chat-toggle-btn:hover {
-    background: rgba(169, 112, 255, 0.28);
+.styled-select:focus {
     border-color: var(--accent);
 }
 
-.chat-toggle-btn.active {
-    background: linear-gradient(135deg, #a970ff, #7c3aed);
-    color: #fff;
-    border-color: transparent;
+.styled-select option {
+    background: #18181b;
+    color: white;
 }
 
 /* ═══════════════════════════════════════════════════════════

@@ -100,11 +100,8 @@ export function resizeStreams() {
         if (el) wrappers.push({ stream, el });
     });
 
-    const focusedModeSelect = document.getElementById('focused-mode-select');
-    const layoutMode = focusedModeSelect ? focusedModeSelect.value : 'bottom';
-
-    const alignmentSelect = document.getElementById('alignment-select');
-    const alignMode = alignmentSelect ? alignmentSelect.value : 'center';
+    const layoutMode = localStorage.getItem('focusedMode') || 'bottom';
+    const alignMode = localStorage.getItem('alignmentMode') || 'center';
 
     let focusedIndex = -1;
     if (focusedStreamId && num > 1) {

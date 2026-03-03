@@ -40,6 +40,7 @@ export function renderApp() {
     updateStreamsIframes();
     updateChatDropdown();
     renderGroupsUI();
+    updateLayoutSettingsUI();
 }
 
 // ── Active Streams List ───────────────────────────────────
@@ -127,6 +128,42 @@ export function updateStreamListUI() {
         li.appendChild(actions);
         streamListEl.appendChild(li);
     });
+}
+
+/**
+ * Enable/Disable layout settings based on focus state
+ */
+export function updateLayoutSettingsUI() {
+    const focusModeGroup = document.getElementById('focused-mode-toggle');
+    const gridSizeGroup = document.getElementById('grid-size-group');
+    if (!focusModeGroup || !gridSizeGroup) return;
+
+    const buttons = focusModeGroup.querySelectorAll('.toggle-btn');
+    const isFocused = !!focusedStreamId;
+    const disabledTooltip = 'Focus a stream (using the "Focus" icon in Active Streams) to change these settings';
+
+    if (isFocused) {
+        focusModeGroup.classList.remove('disabled');
+        focusModeGroup.title = '';
+        gridSizeGroup.style.opacity = '1';
+        gridSizeGroup.style.pointerEvents = 'auto';
+        gridSizeGroup.title = '';
+        buttons.forEach(btn => {
+            btn.disabled = false;
+            const mode = btn.dataset.value;
+            btn.title = `Grid at ${mode.charAt(0).toUpperCase() + mode.slice(1)}`;
+        });
+    } else {
+        focusModeGroup.classList.add('disabled');
+        focusModeGroup.title = disabledTooltip;
+        gridSizeGroup.style.opacity = '0.5';
+        gridSizeGroup.style.pointerEvents = 'auto';
+        gridSizeGroup.title = disabledTooltip;
+        buttons.forEach(btn => {
+            btn.disabled = true;
+            btn.title = '';
+        });
+    }
 }
 
 // ── Chat Dropdown ─────────────────────────────────────────
