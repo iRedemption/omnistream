@@ -10,6 +10,10 @@ const errorMsg = document.getElementById('add-error');
 const inputEl = document.getElementById('stream-input');
 const gapSize = 2; // px
 
+// ── Chat State ───────────────────────────────────────────────
+let chatVisible = false;
+let selectedChatUid = ''; // uid of the stream whose chat is shown
+
 // ── Stream Groups ───────────────────────────────────────────
 let streamGroups = JSON.parse(localStorage.getItem('streamGroups') || '[]');
 let expandedGroups = new Set(); // track which group IDs are expanded
@@ -587,8 +591,121 @@ function updateStreamsIframes() {
 function renderApp() {
     updateStreamListUI();
     updateStreamsIframes();
+    updateChatDropdown();
     renderGroupsUI();
 }
+
+// ── Chat feature ────────────────────────────────────────────
+function buildChatUrl(stream) {
+    if (!stream) return '';
+    const hostname = window.location.hostname || 'localhost';
+    if (stream.type === 'twitch') {
+        // Twitch requires the parent domain in the embed URL
+        return `https://www.twitch.tv/embed/${stream.id}/chat?darkpopout&parent=${hostname}`;
+    } else if (stream.type === 'youtube') {
+        // YouTube requires embed_domain to match the hosting page's domain
+        return `https://www.youtube.com/live_chat?v=${stream.id}&embed_domain=${hostname}`;
+    }
+    return '';
+}
+
+function updateChatDropdown() {
+    const select = document.getElementById('chat-stream-select');
+    if (!select) return;
+
+    // Save prior selection
+    const prevUid = select.value;
+
+    select.innerHTML = '<option value="">-- Select a stream --</option>';
+    activeStreams.forEach(stream => {
+        const opt = document.createElement('option');
+        opt.value = stream.uid;
+        const prefix = stream.type === 'twitch' ? '🟣' : '🔴';
+        opt.textContent = `${prefix} ${stream.label}`;
+        select.appendChild(opt);
+    });
+
+    // Restore selection if stream still exists
+    if (activeStreams.some(s => s.uid === prevUid)) {
+        select.value = prevUid;
+        selectedChatUid = prevUid;
+    } else {
+        // Previously-selected stream removed; auto-pick first if possible
+        if (activeStreams.length > 0) {
+            select.value = activeStreams[0].uid;
+            selectedChatUid = activeStreams[0].uid;
+        } else {
+            select.value = '';
+            selectedChatUid = '';
+        }
+    }
+
+    // If chat is visible, update the iframe src in case the stream changed
+    if (chatVisible) {
+        refreshChatIframe();
+    }
+
+    // Hide chat if no streams left
+    if (activeStreams.length === 0 && chatVisible) {
+        hideChatPanel();
+    }
+}
+
+function refreshChatIframe() {
+    const stream = activeStreams.find(s => s.uid === selectedChatUid);
+    const iframe = document.getElementById('chat-iframe');
+    const label = document.getElementById('chat-panel-label');
+    if (!iframe) return;
+
+    if (stream) {
+        const url = buildChatUrl(stream);
+        if (iframe.src !== url) iframe.src = url;
+        if (label) {
+            const typeIcon = stream.type === 'twitch'
+                ? '<i class="fa-brands fa-twitch" style="color:#a970ff;"></i>'
+                : '<i class="fa-brands fa-youtube" style="color:#ff0000;"></i>';
+            label.innerHTML = `${typeIcon} ${stream.label} — Chat`;
+        }
+    } else {
+        iframe.src = '';
+        if (label) label.innerHTML = '<i class="fa-solid fa-comment"></i> Chat';
+    }
+}
+
+function showChatPanel() {
+    if (activeStreams.length === 0) return;
+    chatVisible = true;
+    const panel = document.getElementById('chat-panel');
+    if (panel) panel.style.display = 'flex';
+    const btn = document.getElementById('chat-toggle-btn');
+    if (btn) { btn.innerHTML = '<i class="fa-solid fa-comment-slash"></i> Hide'; btn.classList.add('active'); }
+    refreshChatIframe();
+    // Streams need resizing since the available width changed
+    setTimeout(resizeStreams, 50);
+}
+
+function hideChatPanel() {
+    chatVisible = false;
+    const panel = document.getElementById('chat-panel');
+    if (panel) panel.style.display = 'none';
+    const btn = document.getElementById('chat-toggle-btn');
+    if (btn) { btn.innerHTML = '<i class="fa-solid fa-comment"></i> Show'; btn.classList.remove('active'); }
+    setTimeout(resizeStreams, 50);
+}
+
+// Wire up chat UI events after DOM is ready
+document.getElementById('chat-toggle-btn').addEventListener('click', () => {
+    if (chatVisible) hideChatPanel(); else showChatPanel();
+});
+
+document.getElementById('chat-close-btn').addEventListener('click', () => {
+    hideChatPanel();
+});
+
+document.getElementById('chat-stream-select').addEventListener('change', (e) => {
+    selectedChatUid = e.target.value;
+    if (chatVisible) refreshChatIframe();
+});
 
 // Init — sidebar starts open, so mark body accordingly
 if (!sidebar.classList.contains('collapsed')) {

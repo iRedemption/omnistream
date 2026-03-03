@@ -87,6 +87,22 @@
 
             <div class="sidebar-section">
                 <div class="section-header-row">
+                    <h3><i class="fa-brands fa-twitch" style="color:#a970ff;"></i><i class="fa-brands fa-youtube"
+                            style="color:#ff0000;margin-left:5px;"></i>&nbsp;Chat</h3>
+                    <button id="chat-toggle-btn" class="chat-toggle-btn" title="Show/Hide Chat">
+                        <i class="fa-solid fa-comment"></i> Show
+                    </button>
+                </div>
+                <div class="control-group">
+                    <label>Chat Source</label>
+                    <select id="chat-stream-select">
+                        <option value="">-- Select a stream --</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="sidebar-section">
+                <div class="section-header-row">
                     <h3><i class="fa-solid fa-list-ul"></i> Active Streams (<span id="stream-count">0</span>)</h3>
                     <button id="save-group-btn" class="save-group-btn" title="Save current Twitch streams as a group"><i
                             class="fa-solid fa-bookmark"></i></button>
@@ -109,8 +125,18 @@
         <main id="main-content" class="main-content">
             <button id="open-sidebar-btn" class="float-btn" title="Open Settings"><i
                     class="fa-solid fa-sliders"></i></button>
-            <div id="streams-container" class="streams-container">
-                <!-- Iframes inserted here -->
+            <div id="content-area" class="content-area">
+                <div id="streams-container" class="streams-container">
+                    <!-- Iframes inserted here -->
+                </div>
+                <div id="chat-panel" class="chat-panel" style="display:none;">
+                    <div class="chat-panel-header">
+                        <span id="chat-panel-label"><i class="fa-solid fa-comment"></i> Chat</span>
+                        <button id="chat-close-btn" class="icon-btn" title="Hide Chat"><i
+                                class="fa-solid fa-xmark"></i></button>
+                    </div>
+                    <iframe id="chat-iframe" src="" allowfullscreen></iframe>
+                </div>
             </div>
         </main>
     </div>
