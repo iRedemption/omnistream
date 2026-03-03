@@ -81,15 +81,11 @@ body {
     font-size: 16px;
 }
 
-.cube-icon {
+.logo-img {
     width: 28px;
     height: 28px;
-    background: linear-gradient(135deg, #a970ff, #e1b1ff);
+    object-fit: contain;
     border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
 }
 
 .icon-btn {
