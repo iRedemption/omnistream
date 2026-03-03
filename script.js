@@ -1,6 +1,62 @@
 const activeStreams = [];
 const twitchPlayers = new Map(); // uid -> Twitch.Player instance
 let isAllPaused = false;
+
+// ── URL Hash Sync ─────────────────────────────────────────────
+// Encodes active streams (and chat state) into the URL hash so
+// the page can be refreshed or shared without losing configuration.
+// Streams format : #channel1/channel2/yt_VIDEO_ID
+// With chat open : #channel1/channel2?chat=channel1
+function updateUrlHash() {
+    if (activeStreams.length === 0) {
+        history.replaceState(null, '', window.location.pathname + window.location.search);
+        return;
+    }
+    const parts = activeStreams.map(s => {
+        if (s.type === 'youtube') return 'yt_' + s.id;
+        return s.id; // Twitch channel name
+    });
+    let hash = '#' + parts.join('/');
+
+    // Append ?chat=<streamId> when the chat panel is open
+    if (chatVisible && selectedChatUid) {
+        const chatStream = activeStreams.find(s => s.uid === selectedChatUid);
+        if (chatStream) {
+            const chatId = chatStream.type === 'youtube'
+                ? 'yt_' + chatStream.id
+                : chatStream.id;
+            hash += '?chat=' + chatId;
+        }
+    }
+    history.replaceState(null, '', hash);
+}
+
+// Returns { streams: [...], chatStreamId: string|null }
+function decodeStreamsFromHash() {
+    let raw = window.location.hash.slice(1); // remove leading '#'
+    if (!raw) return { streams: [], chatStreamId: null };
+
+    // Split off the ?chat= suffix if present
+    let chatStreamId = null;
+    const qIdx = raw.indexOf('?');
+    if (qIdx !== -1) {
+        const query = raw.slice(qIdx + 1);
+        raw = raw.slice(0, qIdx);
+        const chatMatch = query.match(/chat=([^&]+)/);
+        if (chatMatch) chatStreamId = decodeURIComponent(chatMatch[1]);
+    }
+
+    const streams = raw.split('/').filter(Boolean).map(part => {
+        if (part.startsWith('yt_')) {
+            const id = part.slice(3);
+            return { type: 'youtube', id, label: 'YT: ' + id, uid: Date.now().toString() + Math.random() };
+        }
+        const id = decodeURIComponent(part).toLowerCase();
+        return { type: 'twitch', id, label: id, uid: Date.now().toString() + Math.random() };
+    });
+
+    return { streams, chatStreamId };
+}
 let focusedStreamId = null;
 const streamsContainer = document.getElementById('streams-container');
 const streamListEl = document.getElementById('active-streams-list');
@@ -132,6 +188,7 @@ function handleAdd() {
     activeStreams.push(newMode);
 
     inputEl.value = '';
+    updateUrlHash();
     renderApp();
 }
 
@@ -146,6 +203,7 @@ function removeStream(uid) {
     const idx = activeStreams.findIndex(s => s.uid === uid);
     if (idx !== -1) {
         activeStreams.splice(idx, 1);
+        updateUrlHash();
         renderApp();
     }
 }
@@ -161,6 +219,7 @@ if (clearAllBtn) {
             isAllPaused = false;
             twitchPlayers.clear();
             updatePauseButtonIcon();
+            updateUrlHash();
             renderApp();
         }
     });
@@ -686,6 +745,7 @@ function showChatPanel() {
     const btn = document.getElementById('chat-toggle-btn');
     if (btn) { btn.innerHTML = '<i class="fa-solid fa-comment-slash"></i> Hide'; btn.classList.add('active'); }
     refreshChatIframe();
+    updateUrlHash();
     // Streams need resizing since the available width changed
     setTimeout(resizeStreams, 50);
 }
@@ -696,6 +756,7 @@ function hideChatPanel() {
     if (panel) panel.style.display = 'none';
     const btn = document.getElementById('chat-toggle-btn');
     if (btn) { btn.innerHTML = '<i class="fa-solid fa-comment"></i> Show'; btn.classList.remove('active'); }
+    updateUrlHash();
     setTimeout(resizeStreams, 50);
 }
 
@@ -710,15 +771,40 @@ document.getElementById('chat-close-btn').addEventListener('click', () => {
 
 document.getElementById('chat-stream-select').addEventListener('change', (e) => {
     selectedChatUid = e.target.value;
-    if (chatVisible) refreshChatIframe();
+    if (chatVisible) {
+        refreshChatIframe();
+        updateUrlHash();
+    }
 });
 
 // Init — sidebar starts open, so mark body accordingly
 if (!sidebar.classList.contains('collapsed')) {
     document.body.classList.add('sidebar-open');
 }
+
+// Load streams (and chat state) from URL hash on startup
+const { streams: hashStreams, chatStreamId } = decodeStreamsFromHash();
+hashStreams.forEach(s => activeStreams.push(s));
+
 renderApp();
 resizeStreams();
+
+// Restore chat panel from URL if ?chat= was present
+if (chatStreamId && activeStreams.length > 0) {
+    let chatStream;
+    if (chatStreamId.startsWith('yt_')) {
+        const ytId = chatStreamId.slice(3);
+        chatStream = activeStreams.find(s => s.type === 'youtube' && s.id === ytId);
+    } else {
+        chatStream = activeStreams.find(s => s.type === 'twitch' && s.id === chatStreamId);
+    }
+    if (chatStream) {
+        selectedChatUid = chatStream.uid;
+        const select = document.getElementById('chat-stream-select');
+        if (select) select.value = selectedChatUid;
+        showChatPanel();
+    }
+}
 
 // ═══════════════════════════════════════════════════════════
 // Stream Groups
@@ -789,6 +875,7 @@ function loadGroup(groupId) {
     group.streams.forEach(s => {
         activeStreams.push({ ...s, uid: Date.now().toString() + Math.random() });
     });
+    updateUrlHash();
     renderApp();
     resizeStreams();
 }
@@ -796,6 +883,7 @@ function loadGroup(groupId) {
 function addStreamFromGroup(stream) {
     if (activeStreams.some(s => s.type === stream.type && s.id === stream.id)) return;
     activeStreams.push({ ...stream, uid: Date.now().toString() + Math.random() });
+    updateUrlHash();
     renderApp();
     resizeStreams();
 }
