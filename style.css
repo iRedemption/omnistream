@@ -381,11 +381,22 @@ body {
     overflow: hidden;
 }
 
-.stream-wrapper iframe {
+.stream-wrapper iframe,
+.stream-wrapper > div {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100% !important;
+    height: 100% !important;
+    border: none;
+}
+
+/* Twitch SDK injects a nested iframe inside a div — ensure it fills too */
+.stream-wrapper > div > iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100% !important;
+    height: 100% !important;
     border: none;
 }

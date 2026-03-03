@@ -1,4 +1,6 @@
 const activeStreams = [];
+const twitchPlayers = new Map(); // uid -> Twitch.Player instance
+let isAllPaused = false;
 let focusedStreamId = null;
 const streamsContainer = document.getElementById('streams-container');
 const streamListEl = document.getElementById('active-streams-list');
@@ -105,6 +107,10 @@ function removeStream(uid) {
     if (focusedStreamId === uid) {
         focusedStreamId = null;
     }
+    // Destroy Twitch player instance if one exists for this stream
+    if (twitchPlayers.has(uid)) {
+        twitchPlayers.delete(uid);
+    }
     const idx = activeStreams.findIndex(s => s.uid === uid);
     if (idx !== -1) {
         activeStreams.splice(idx, 1);
@@ -115,8 +121,58 @@ function removeStream(uid) {
 document.getElementById('clear-all-btn').addEventListener('click', () => {
     activeStreams.length = 0;
     focusedStreamId = null;
+    isAllPaused = false;
+    twitchPlayers.clear();
+    updatePauseButtonIcon();
     renderApp();
 });
+
+const pauseAllBtn = document.getElementById('pause-all-btn');
+if (pauseAllBtn) {
+    pauseAllBtn.addEventListener('click', togglePauseAll);
+}
+
+function updatePauseButtonIcon() {
+    if (!pauseAllBtn) return;
+    if (isAllPaused) {
+        pauseAllBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        pauseAllBtn.title = 'Unpause all streams';
+    } else {
+        pauseAllBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+        pauseAllBtn.title = 'Pause all streams';
+    }
+}
+
+function togglePauseAll() {
+    isAllPaused = !isAllPaused;
+    updatePauseButtonIcon();
+
+    const iframes = streamsContainer.querySelectorAll('iframe');
+    iframes.forEach(iframe => {
+
+        const streamUid = iframe ? iframe.parentElement.dataset.uid : null;
+        const stream = activeStreams.find(s => s.uid === streamUid);
+        if (!stream) return;
+
+        if (stream.type === 'youtube') {
+            const command = isAllPaused ? 'pauseVideo' : 'playVideo';
+            iframe.contentWindow.postMessage(JSON.stringify({
+                event: 'command',
+                func: command,
+                args: ''
+            }), '*');
+        }
+    });
+
+    // Control Twitch streams via the SDK player references
+    twitchPlayers.forEach((player) => {
+        if (isAllPaused) {
+            player.pause();
+        } else {
+            player.play();
+        }
+    });
+}
 
 const fullscreenBtn = document.getElementById('fullscreen-btn');
 fullscreenBtn.addEventListener('click', () => {
@@ -416,20 +472,36 @@ function updateStreamsIframes() {
             wrapper.className = 'stream-wrapper';
             wrapper.dataset.uid = stream.uid;
 
-            const iframe = document.createElement('iframe');
-            iframe.allowFullscreen = true;
-
             if (stream.type === 'twitch') {
-                iframe.src = `https://player.twitch.tv/?channel=${stream.id}&parent=${parentHostname}&parent=127.0.0.1&muted=true`;
+                // Use the Twitch Embed SDK for real pause/play control
+                const targetDivId = `twitch-player-${stream.uid}`;
+                const targetDiv = document.createElement('div');
+                targetDiv.id = targetDivId;
+                targetDiv.style.width = '100%';
+                targetDiv.style.height = '100%';
+                wrapper.appendChild(targetDiv);
+                streamsContainer.appendChild(wrapper);
+
+                // The SDK injects a sized iframe into targetDiv.
+                // We size it after the player is ready via resizeStreams.
+                const player = new Twitch.Player(targetDivId, {
+                    channel: stream.id,
+                    parent: [parentHostname, '127.0.0.1', 'localhost'],
+                    muted: true,
+                    autoplay: !isAllPaused,
+                    width: '100%',
+                    height: '100%',
+                });
+                twitchPlayers.set(stream.uid, player);
             } else if (stream.type === 'youtube') {
-                // Fixed: Appended &mute=1 to prevent browser autoplay blocks, and explicitly set the origin to prevent API conflicts
-                iframe.src = `https://www.youtube.com/embed/${stream.id}?autoplay=1&mute=1&playsinline=1&origin=${encodeURIComponent(originUrl)}`;
+                const iframe = document.createElement('iframe');
+                iframe.allowFullscreen = true;
+                // Added enablejsapi=1 to allow control via postMessage
+                iframe.src = `https://www.youtube.com/embed/${stream.id}?autoplay=${isAllPaused ? 0 : 1}&mute=1&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(originUrl)}`;
+                iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen');
+                wrapper.appendChild(iframe);
+                streamsContainer.appendChild(wrapper);
             }
-
-            iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen');
-
-            wrapper.appendChild(iframe);
-            streamsContainer.appendChild(wrapper);
         } else {
             currentIframes.delete(stream.uid);
         }
