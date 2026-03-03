@@ -383,10 +383,9 @@ body {
 }
 
 .float-btn {
-    background: rgba(46, 46, 54, 0.8);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--accent);
     color: white;
+    border: none;
     width: 44px;
     height: 44px;
     border-radius: 8px;
@@ -396,6 +395,7 @@ body {
     cursor: pointer;
     transition: opacity 0.3s, transform 0.2s, background 0.2s;
     opacity: 0;
+    font-size: 18px;
 }
 
 .floating-controls:hover .float-btn {
@@ -403,7 +403,7 @@ body {
 }
 
 .float-btn:hover {
-    background: rgba(60, 60, 70, 0.9);
+    background: var(--accent-hover);
 }
 
 /* Hide when sidebar is open */
@@ -567,9 +567,9 @@ body.sidebar-open .float-btn {
 }
 
 .clear-all-btn {
-    background: rgba(255, 107, 107, 0.12);
+    background: transparent;
     color: #ff6b6b;
-    border: 1px solid rgba(255, 107, 107, 0.2);
+    border: none;
     border-radius: 6px;
     width: 28px;
     height: 28px;
@@ -582,32 +582,26 @@ body.sidebar-open .float-btn {
 }
 
 .clear-all-btn:hover {
-    background: #ff6b6b;
-    color: white;
-    border-color: transparent;
+    background: rgba(255, 107, 107, 0.12);
 }
 
 .save-group-btn {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    background: linear-gradient(135deg, #a970ff, #7c3aed);
-    color: #fff;
+    background: transparent;
+    color: var(--accent);
     border: none;
     border-radius: 6px;
-    padding: 5px 10px;
-    font-size: 11px;
-    font-family: inherit;
-    font-weight: 600;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
-    transition: opacity 0.2s, transform 0.1s;
-    white-space: nowrap;
-    flex-shrink: 0;
+    font-size: 13px;
+    transition: all 0.2s;
 }
 
 .save-group-btn:hover {
-    opacity: 0.88;
-    transform: translateY(-1px);
+    background: rgba(169, 112, 255, 0.12);
 }
 
 /* ═══════════════════════════════════════════════════════════

@@ -3,10 +3,11 @@ const twitchPlayers = new Map(); // uid -> Twitch.Player instance
 let isAllPaused = false;
 
 // ── URL Hash Sync ─────────────────────────────────────────────
-// Encodes active streams (and chat state) into the URL hash so
+// Encodes active streams (and chat/focus state) into the URL hash so
 // the page can be refreshed or shared without losing configuration.
 // Streams format : #channel1/channel2/yt_VIDEO_ID
 // With chat open : #channel1/channel2?chat=channel1
+// With focus     : #channel1/channel2?chat=channel1&focus=channel2
 function updateUrlHash() {
     if (activeStreams.length === 0) {
         history.replaceState(null, '', window.location.pathname + window.location.search);
@@ -18,32 +19,53 @@ function updateUrlHash() {
     });
     let hash = '#' + parts.join('/');
 
-    // Append ?chat=<streamId> when the chat panel is open
+    let queryParts = [];
+
+    // Add ?chat=<streamId> when the chat panel is open
     if (chatVisible && selectedChatUid) {
         const chatStream = activeStreams.find(s => s.uid === selectedChatUid);
         if (chatStream) {
             const chatId = chatStream.type === 'youtube'
                 ? 'yt_' + chatStream.id
                 : chatStream.id;
-            hash += '?chat=' + chatId;
+            queryParts.push('chat=' + chatId);
         }
     }
+
+    // Add &focus=<streamId> when a stream is focused
+    if (focusedStreamId) {
+        const focusStream = activeStreams.find(s => s.uid === focusedStreamId);
+        if (focusStream) {
+            const focusId = focusStream.type === 'youtube'
+                ? 'yt_' + focusStream.id
+                : focusStream.id;
+            queryParts.push('focus=' + focusId);
+        }
+    }
+
+    if (queryParts.length > 0) {
+        hash += '?' + queryParts.join('&');
+    }
+
     history.replaceState(null, '', hash);
 }
 
-// Returns { streams: [...], chatStreamId: string|null }
+// Returns { streams: [...], chatStreamId: string|null, focusStreamId: string|null }
 function decodeStreamsFromHash() {
     let raw = window.location.hash.slice(1); // remove leading '#'
-    if (!raw) return { streams: [], chatStreamId: null };
+    if (!raw) return { streams: [], chatStreamId: null, focusStreamId: null };
 
     // Split off the ?chat= suffix if present
     let chatStreamId = null;
+    let focusStreamId = null;
     const qIdx = raw.indexOf('?');
     if (qIdx !== -1) {
         const query = raw.slice(qIdx + 1);
         raw = raw.slice(0, qIdx);
-        const chatMatch = query.match(/chat=([^&]+)/);
-        if (chatMatch) chatStreamId = decodeURIComponent(chatMatch[1]);
+
+        const params = new URLSearchParams(query);
+        chatStreamId = params.get('chat');
+        focusStreamId = params.get('focus');
     }
 
     const streams = raw.split('/').filter(Boolean).map(part => {
@@ -55,7 +77,7 @@ function decodeStreamsFromHash() {
         return { type: 'twitch', id, label: id, uid: Date.now().toString() + Math.random() };
     });
 
-    return { streams, chatStreamId };
+    return { streams, chatStreamId, focusStreamId };
 }
 let focusedStreamId = null;
 const streamsContainer = document.getElementById('streams-container');
@@ -572,6 +594,7 @@ function updateStreamListUI() {
                 } else {
                     focusedStreamId = stream.uid;
                 }
+                updateUrlHash();
                 renderApp();
                 resizeStreams();
             };
@@ -777,17 +800,38 @@ document.getElementById('chat-stream-select').addEventListener('change', (e) => 
     }
 });
 
-// Init — sidebar starts open, so mark body accordingly
-if (!sidebar.classList.contains('collapsed')) {
+// Load streams (and chat/focus state) from URL hash on startup
+const { streams: hashStreams, chatStreamId, focusStreamId } = decodeStreamsFromHash();
+hashStreams.forEach(s => activeStreams.push(s));
+
+// Sidebar initial state: Show on home page, hide if loading streams
+if (activeStreams.length > 0) {
+    sidebar.classList.add('collapsed');
+    document.body.classList.remove('sidebar-open');
+} else {
+    sidebar.classList.remove('collapsed');
     document.body.classList.add('sidebar-open');
 }
 
-// Load streams (and chat state) from URL hash on startup
-const { streams: hashStreams, chatStreamId } = decodeStreamsFromHash();
-hashStreams.forEach(s => activeStreams.push(s));
-
 renderApp();
 resizeStreams();
+
+// Restore focus state from URL if &focus= was present
+if (focusStreamId && activeStreams.length > 0) {
+    let focusStream;
+    if (focusStreamId.startsWith('yt_')) {
+        const ytId = focusStreamId.slice(3);
+        focusStream = activeStreams.find(s => s.type === 'youtube' && s.id === ytId);
+    } else {
+        focusStream = activeStreams.find(s => s.type === 'twitch' && s.id === focusStreamId);
+    }
+    if (focusStream) {
+        focusedStreamId = focusStream.uid;
+        // Need to render and resize again to show focus
+        renderApp();
+        resizeStreams();
+    }
+}
 
 // Restore chat panel from URL if ?chat= was present
 if (chatStreamId && activeStreams.length > 0) {
