@@ -97,9 +97,10 @@ export function calcNormalLayout(count, W, H, gapSize, alignMode) {
  * @param {number} gapSize     Gap between tiles (px)
  * @param {'top'|'bottom'|'left'|'right'} layoutMode
  * @param {number} gridPercent Fraction (0–1) of available space for the grid strip
+ * @param {'left'|'center'|'right'} alignMode
  * @returns {{ focusArea: {x,y,w,h}, gridArea: {x,y,w,h} }}
  */
-export function calcFocusAreas(W, H, gapSize, layoutMode, gridPercent) {
+export function calcFocusAreas(W, H, gapSize, layoutMode, gridPercent, alignMode) {
     const availableW = W - 2 * gapSize;
     const availableH = H - 2 * gapSize;
 
@@ -151,11 +152,33 @@ export function calcFocusAreas(W, H, gapSize, layoutMode, gridPercent) {
         focusArea.y = gapSize;
     }
 
+    // Special alignment for focused stream in top/bottom modes
+    if (layoutMode === 'top' || layoutMode === 'bottom') {
+        if (alignMode === 'left' || alignMode === 'right') {
+            // Calculate what a 16:9 stream would be if it filled the focusArea
+            let fw = focusArea.w;
+            let fh = fw / (16 / 9);
+            if (fh > focusArea.h) {
+                fh = focusArea.h;
+                fw = fh * (16 / 9);
+            }
+            // Shrink the focusArea to wrap that 16:9 stream perfectly
+            // and align it to the requested side
+            focusArea.w = fw;
+            focusArea.h = fh;
+            if (alignMode === 'right') {
+                focusArea.x = (W - gapSize) - fw;
+            }
+        }
+    }
+
     return { focusArea, gridArea };
 }
 
 /**
- * Fit a 16:9 rectangle inside an area, centred.
+ * Fit a 16:9 rectangle inside an area. By default it centres,
+ * but if the area and rectangle are the same size (pre-aligned),
+ * it returns the area as-is.
  *
  * @param {{ x, y, w, h }} area  The bounding box
  * @returns {{ x, y, w, h }}     The fitted rectangle (floored)
@@ -167,6 +190,8 @@ export function fitAspect(area) {
         h = area.h;
         w = h * (16 / 9);
     }
+    // If the area's dimensions are already set to this fitted size
+    // (from calcFocusAreas), this naturally returns the area's x/y.
     return {
         x: Math.floor(area.x + (area.w - w) / 2),
         y: Math.floor(area.y + (area.h - h) / 2),

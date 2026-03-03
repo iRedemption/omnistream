@@ -133,7 +133,7 @@ export function resizeStreams() {
         const gridSizeSlider = document.getElementById('grid-size-slider');
         const gridPercent = gridSizeSlider ? parseInt(gridSizeSlider.value) / 100 : 0.25;
 
-        const { focusArea, gridArea } = calcFocusAreas(W, H, gapSize, layoutMode, gridPercent);
+        const { focusArea, gridArea } = calcFocusAreas(W, H, gapSize, layoutMode, gridPercent, alignMode);
 
         // Position the focused stream (16:9 centred inside focusArea)
         const fp = fitAspect(focusArea);
