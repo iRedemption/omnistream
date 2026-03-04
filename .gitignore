@@ -1,4 +1,5 @@
 .gemini
+<<<<<<< HEAD
 .env
 
 # Go binaries
@@ -8,3 +9,5 @@ server.exe
 # Air live-reload temp directory
 tmp/
 .env
+=======
+>>>>>>> 74ed739 (feat(sync): add Twitch VOD synchronization tool with audio cross-correlation)
