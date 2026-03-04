@@ -1,0 +1,10 @@
+.gemini
+.env
+
+# Go binaries
+server
+server.exe
+
+# Air live-reload temp directory
+tmp/
+.env

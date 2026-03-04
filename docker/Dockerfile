@@ -1,26 +1,31 @@
-# ─────────────────────────────────────────────────────────────────
-# OmniStream – Static site served by Nginx
-# Build & Run with Compose:  docker-compose up -d --build
-# Access at:  http://localhost:5500
-# ─────────────────────────────────────────────────────────────────
-FROM nginx:alpine
+# Build stage
+FROM golang:1.22-alpine AS builder
 
-# Remove the default Nginx welcome page
-RUN rm -rf /usr/share/nginx/html/*
+WORKDIR /app
 
-# Copy all static assets into Nginx's web root
-# Note: the build context is the project root (set in docker-compose.yml),
-# so all paths here are relative to the repo root, not this docker/ folder.
-COPY index.html               /usr/share/nginx/html/
-COPY assets/omnistream.png    /usr/share/nginx/html/assets/
-COPY css/                     /usr/share/nginx/html/css/
-COPY js/                      /usr/share/nginx/html/js/
+# Copy module files and download dependencies
+COPY go.mod ./
+RUN go mod download || true
 
-# Copy our custom Nginx configuration
-COPY docker/nginx.conf /etc/nginx/conf.d/default.conf
+# Copy all files and build the application
+COPY . .
+RUN CGO_ENABLED=0 go build -o main .
+
+# Run stage
+FROM alpine:latest
+
+WORKDIR /app
+
+# Copy the built binary
+COPY --from=builder /app/main .
+
+# Copy the static folders and index.html
+COPY index.html ./
+COPY css/ ./css/
+COPY js/ ./js/
+COPY assets/ ./assets/
 
 # Expose HTTP port
-EXPOSE 80
+EXPOSE 8080
 
-# Nginx runs in the foreground by default in the official image
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["./main"]
