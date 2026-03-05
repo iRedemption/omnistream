@@ -19,6 +19,7 @@ import {
     resizeStreams,
     togglePauseAll,
     updatePauseButtonIcon,
+    syncVods,
     showChatPanel,
     hideChatPanel,
     refreshChatIframe,
@@ -101,6 +102,29 @@ if (sidebarSideToggle) {
 // ── Add Stream Controls ───────────────────────────────────
 const addStreamBtn = document.getElementById('add-stream-btn');
 const inputEl = document.getElementById('stream-input');
+const vodUsernamesInput = document.getElementById('vod-usernames-input');
+
+// Stream type toggle logic
+const streamTypeToggle = document.getElementById('stream-type-toggle');
+const vodUsernamesContainer = document.getElementById('vod-usernames-container');
+const streamGroupsSection = document.getElementById('stream-groups-section');
+
+if (streamTypeToggle) {
+    streamTypeToggle.addEventListener('click', (e) => {
+        const btn = e.target.closest('.toggle-btn');
+        if (!btn) return;
+        streamTypeToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+
+        if (btn.dataset.value === 'vod') {
+            vodUsernamesContainer.style.display = 'block';
+            if (streamGroupsSection) streamGroupsSection.style.display = 'none';
+        } else {
+            vodUsernamesContainer.style.display = 'none';
+            if (streamGroupsSection) streamGroupsSection.style.display = 'block';
+        }
+    });
+}
 
 addStreamBtn.addEventListener('click', () => handleAdd(parseStreamInput));
 inputEl.addEventListener('keydown', (e) => {
@@ -149,9 +173,14 @@ if (clearAllBtn) {
 // ── Pause / Fullscreen Buttons ────────────────────────────
 const pauseAllBtn = document.getElementById('pause-all-btn');
 const fullscreenBtn = document.getElementById('fullscreen-btn');
+const syncVodsBtn = document.getElementById('sync-vods-btn');
 
 if (pauseAllBtn) {
     pauseAllBtn.addEventListener('click', togglePauseAll);
+}
+
+if (syncVodsBtn) {
+    syncVodsBtn.addEventListener('click', syncVods);
 }
 
 fullscreenBtn.addEventListener('click', () => {

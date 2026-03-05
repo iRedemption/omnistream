@@ -5,11 +5,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>OmniStream</title>
-    <link rel="icon" type="image/png" href="assets/omnistream.png">
+    <link rel="icon" type="image/png" href="/assets/omnistream.png">
     <!-- Split CSS -->
-    <link rel="stylesheet" href="css/variables.css">
-    <link rel="stylesheet" href="css/layout.css">
-    <link rel="stylesheet" href="css/components.css">
+    <link rel="stylesheet" href="/css/variables.css">
+    <link rel="stylesheet" href="/css/layout.css">
+    <link rel="stylesheet" href="/css/components.css">
     <!-- Fonts & Icons -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -21,7 +21,7 @@
         <aside id="sidebar" class="sidebar">
             <div class="sidebar-header">
                 <div class="logo">
-                    <img src="assets/omnistream.png" alt="Logo" class="logo-img">
+                    <img src="/assets/omnistream.png" alt="Logo" class="logo-img">
                     <span>OmniStream</span>
                 </div>
                 <button id="close-sidebar-btn" class="icon-btn" title="Close Sidebar"><i
@@ -30,14 +30,32 @@
 
             <div class="sidebar-section">
                 <h3><i class="fa-solid fa-circle-plus"></i> Add Stream</h3>
+                <div class="control-group">
+                    <div class="toggle-group" id="stream-type-toggle" style="margin-bottom: 8px;">
+                        <button class="toggle-btn active" data-value="live" title="Live Streams"><i
+                                class="fa-solid fa-satellite-dish"></i> Live</button>
+                        <button class="toggle-btn" data-value="vod" title="VODs / Sync"><i
+                                class="fa-solid fa-video"></i> VOD</button>
+                    </div>
+                </div>
                 <div class="input-group">
                     <div class="platform-icon" id="platform-icon-container">
                         <i class="fa-brands fa-twitch" style="color: #a970ff;"></i>
                     </div>
                     <input type="text" id="stream-input" placeholder="Channel name / URL" autocomplete="off">
+                    <!-- The Add button remains the same -->
                     <button id="add-stream-btn" class="purple-btn" title="Add Stream"><i
                             class="fa-solid fa-plus"></i></button>
                 </div>
+                <div class="input-group" id="vod-usernames-container" style="display: none; margin-top: 8px;">
+                    <textarea id="vod-usernames-input" class="styled-input" rows="3"
+                        placeholder="Additional Twitch usernames to sync,&#10;separate by line breaks..."
+                        style="width: 100%; border-radius: 4px; padding: 6px;"></textarea>
+                </div>
+                <!-- VOD status/loading label -->
+                <div id="vod-sync-status"
+                    style="font-size: 0.85em; color: var(--accent); margin-top: 4px; display: none;"><i
+                        class="fa-solid fa-spinner fa-spin"></i> Syncing VODs...</div>
                 <div id="add-error" class="error-msg"></div>
             </div>
 
@@ -169,6 +187,9 @@
                 <button id="pause-all-btn" class="float-btn" title="Pause/Unpause all streams">
                     <i class="fa-solid fa-pause"></i>
                 </button>
+                <button id="sync-vods-btn" class="float-btn" title="Sync VODs" style="display: none;">
+                    <i class="fa-solid fa-arrows-rotate"></i>
+                </button>
             </div>
             <div id="content-area" class="content-area">
                 <div id="streams-container" class="streams-container">
@@ -184,6 +205,11 @@
                 </div>
             </div>
         </main>
+    </div>
+
+    <!-- Notification Center -->
+    <div id="notification-center"
+        style="position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; pointer-events: none;">
     </div>
 
     <!-- Save Group Modal -->
@@ -207,7 +233,7 @@
     <!-- Twitch Embed SDK must load before main.js so `Twitch` is available globally -->
     <script src="https://embed.twitch.tv/embed/v1.js"></script>
     <!-- ES Module entry point — replaces the old script.js -->
-    <script type="module" src="js/main.js"></script>
+    <script type="module" src="/js/main.js"></script>
 </body>
 
 </html>

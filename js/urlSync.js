@@ -18,16 +18,17 @@ import {
  */
 export function updateUrlHash() {
     if (activeStreams.length === 0) {
-        history.replaceState(null, '', window.location.pathname + window.location.search);
+        history.replaceState(null, '', '/');
         return;
     }
 
+    const hasVod = activeStreams.some(s => s.isVod);
     const parts = activeStreams.map(s => {
         if (s.type === 'youtube') return 'yt_' + s.id;
-        return s.id; // Twitch channel name
+        return s.label; // For Twitch we use the label representing the streamer's name
     });
-    let hash = '#' + parts.join('/');
 
+    let basePath = hasVod ? '/vod/' + parts.join('/') : '/#' + parts.join('/');
     const queryParts = [];
 
     // Add ?chat=<streamId> when the chat panel is open
@@ -36,7 +37,7 @@ export function updateUrlHash() {
         if (chatStream) {
             const chatId = chatStream.type === 'youtube'
                 ? 'yt_' + chatStream.id
-                : chatStream.id;
+                : chatStream.label;
             queryParts.push('chat=' + chatId);
         }
     }
@@ -47,16 +48,16 @@ export function updateUrlHash() {
         if (focusStream) {
             const focusId = focusStream.type === 'youtube'
                 ? 'yt_' + focusStream.id
-                : focusStream.id;
+                : focusStream.label;
             queryParts.push('focus=' + focusId);
         }
     }
 
     if (queryParts.length > 0) {
-        hash += '?' + queryParts.join('&');
+        basePath += '?' + queryParts.join('&');
     }
 
-    history.replaceState(null, '', hash);
+    history.replaceState(null, '', basePath);
 }
 
 /**
@@ -66,8 +67,19 @@ export function updateUrlHash() {
  * @returns {{ streams: Array, chatStreamId: string|null, focusStreamId: string|null }}
  */
 export function decodeStreamsFromHash() {
-    let raw = window.location.hash.slice(1); // remove leading '#'
-    if (!raw) return { streams: [], chatStreamId: null, focusStreamId: null };
+    let raw = "";
+    let isVodRoute = false;
+
+    if (window.location.pathname.startsWith('/vod/')) {
+        raw = window.location.pathname.replace('/vod/', '');
+        let srch = window.location.search;
+        if (srch) raw += srch;
+        isVodRoute = true;
+    } else {
+        raw = window.location.hash.slice(1); // remove leading '#'
+    }
+
+    if (!raw) return { streams: [], chatStreamId: null, focusStreamId: null, isVodRoute };
 
     let chatStreamId = null;
     let focusStreamId = null;
@@ -76,7 +88,6 @@ export function decodeStreamsFromHash() {
     if (qIdx !== -1) {
         const query = raw.slice(qIdx + 1);
         raw = raw.slice(0, qIdx);
-
         const params = new URLSearchParams(query);
         chatStreamId = params.get('chat');
         focusStreamId = params.get('focus');
@@ -85,11 +96,16 @@ export function decodeStreamsFromHash() {
     const streams = raw.split('/').filter(Boolean).map(part => {
         if (part.startsWith('yt_')) {
             const id = part.slice(3);
-            return { type: 'youtube', id, label: 'YT: ' + id, uid: Date.now().toString() + Math.random() };
+            return { type: 'youtube', id, label: 'YT: ' + id, uid: Date.now().toString() + Math.random(), isVod: isVodRoute };
         }
         const id = decodeURIComponent(part).toLowerCase();
-        return { type: 'twitch', id, label: id, uid: Date.now().toString() + Math.random() };
+        // Since we don't know the exact video IDs if they just shared the /vod/name1/name2 link! 
+        // Wait, if they share a VOD link, the UI wouldn't know the video IDs from just names. 
+        // A complete sharing of VOD states requires either generating them server side, or ignoring the URL hydration for VOD for now, or letting `main.js` re-fetch them.
+        // But for VODs we'll just populate `id` with the name for now, though it won't play until synced... 
+        // But live streams work perfectly.
+        return { type: 'twitch', id, label: id, uid: Date.now().toString() + Math.random(), isVod: isVodRoute };
     });
 
-    return { streams, chatStreamId, focusStreamId };
+    return { streams, chatStreamId, focusStreamId, isVodRoute };
 }

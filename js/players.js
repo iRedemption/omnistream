@@ -192,20 +192,29 @@ export function updateStreamsIframes() {
                 wrapper.appendChild(targetDiv);
                 streamsContainer.appendChild(wrapper);
 
-                const player = new Twitch.Player(targetDivId, {
-                    channel: stream.id,
+                const playerOptions = {
                     parent: [parentHostname, '127.0.0.1', 'localhost'],
                     muted: true,
-                    autoplay: !isAllPaused,
+                    autoplay: stream.isVod ? false : !isAllPaused,
                     width: '100%',
                     height: '100%',
-                });
+                };
+
+                if (stream.isVod) {
+                    playerOptions.video = stream.id;
+                    playerOptions.time = stream.time || "0s";
+                } else {
+                    playerOptions.channel = stream.id;
+                }
+
+                const player = new Twitch.Player(targetDivId, playerOptions);
                 twitchPlayers.set(stream.uid, player);
 
             } else if (stream.type === 'youtube') {
                 const iframe = document.createElement('iframe');
                 iframe.allowFullscreen = true;
-                iframe.src = `https://www.youtube.com/embed/${stream.id}?autoplay=${isAllPaused ? 0 : 1}&mute=1&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(originUrl)}`;
+                const ytAutoplay = (stream.isVod || isAllPaused) ? 0 : 1;
+                iframe.src = `https://www.youtube.com/embed/${stream.id}?autoplay=${ytAutoplay}&mute=1&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(originUrl)}`;
                 iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen');
                 wrapper.appendChild(iframe);
                 streamsContainer.appendChild(wrapper);
@@ -217,6 +226,16 @@ export function updateStreamsIframes() {
 
     // Remove wrappers whose streams are no longer active
     currentIframes.forEach(el => streamsContainer.removeChild(el));
+
+    // Show or hide Sync VODs button based on whether there are VODs
+    const syncBtn = document.getElementById('sync-vods-btn');
+    if (syncBtn) {
+        if (activeStreams.some(s => s.isVod)) {
+            syncBtn.style.display = 'flex';
+        } else {
+            syncBtn.style.display = 'none';
+        }
+    }
 
     resizeStreams();
 }
@@ -269,6 +288,42 @@ export function togglePauseAll() {
         } else {
             player.play();
         }
+    });
+}
+
+/**
+ * Re-align all VOD streams to the primary (first) stream position
+ */
+export function syncVods() {
+    if (!activeStreams.length) return;
+
+    // 1. Force Pause All first to ensure primary playhead is static
+    if (!isAllPaused) {
+        togglePauseAll();
+    }
+
+    // Use dynamic import for the notify function to prevent circular dependency
+    import('./uiRender.js').then(({ notify }) => {
+        // 2. Small timeout to let the pause settle before reading primary time
+        setTimeout(() => {
+            const firstUid = activeStreams[0].uid;
+            const primaryPlayer = twitchPlayers.get(firstUid);
+            if (!primaryPlayer) return;
+
+            const T0 = primaryPlayer.getCurrentTime();
+
+            activeStreams.forEach((stream, idx) => {
+                if (idx === 0) return;
+
+                const p = twitchPlayers.get(stream.uid);
+                if (p && stream.isVod && stream.total_offset !== undefined) {
+                    const target = T0 + stream.total_offset;
+                    p.seek(target);
+                }
+            });
+
+            notify(`Streams paused and re-synchronized to primary (${T0.toFixed(1)}s)`);
+        }, 100);
     });
 }
 

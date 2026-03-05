@@ -15,6 +15,7 @@ import {
     setFocusedStreamId,
     setSelectedChatUid,
     setStreamGroups,
+    setIsAllPaused,
 } from './state.js';
 
 // Namespace import so we can read `state.streamGroups` at call-time (after
@@ -28,6 +29,7 @@ import {
     resizeStreams,
     refreshChatIframe,
     hideChatPanel,
+    updatePauseButtonIcon,
 } from './players.js';
 
 // ── Top-level render coordinator ──────────────────────────
@@ -443,15 +445,104 @@ export function confirmSaveGroup() {
 
 // ── Handle Add Stream ─────────────────────────────────────
 
+export function notify(message) {
+    const center = document.getElementById('notification-center');
+    if (!center) return;
+    const div = document.createElement('div');
+    div.style.background = '#1f1f23';
+    div.style.borderLeft = '4px solid #a970ff';
+    div.style.padding = '12px 20px';
+    div.style.borderRadius = '4px';
+    div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
+    div.style.pointerEvents = 'auto';
+    div.style.maxWidth = '320px';
+    div.style.transition = 'all 0.3s ease-out';
+    div.textContent = message;
+    center.appendChild(div);
+    setTimeout(() => {
+        div.style.opacity = '0';
+        div.style.transform = 'translateY(-20px)';
+        setTimeout(() => div.remove(), 500);
+    }, 6000);
+}
+
 /**
  * Validate and add the stream currently typed in #stream-input.
  * Imported and called from main.js event listeners.
  */
-export function handleAdd(parseStreamInput) {
+export async function handleAdd(parseStreamInput) {
     const errorMsg = document.getElementById('add-error');
     const inputEl = document.getElementById('stream-input');
+    const streamTypeToggle = document.getElementById('stream-type-toggle');
+    const isVod = streamTypeToggle ? !!streamTypeToggle.querySelector('.toggle-btn.active[data-value="vod"]') : false;
     errorMsg.textContent = '';
 
+    if (isVod) {
+        const vodUrl = inputEl.value.trim();
+        const rawUsernames = document.getElementById('vod-usernames-input')?.value.trim();
+        if (!vodUrl) {
+            errorMsg.textContent = 'Please provide a base VOD URL.';
+            return;
+        }
+
+        const streamersList = rawUsernames
+            ? rawUsernames.split('\n').map(s => s.trim()).filter(Boolean)
+            : [];
+
+        const statusEl = document.getElementById('vod-sync-status');
+        if (statusEl) statusEl.style.display = 'block';
+
+        try {
+            const res = await fetch('/api/vod-sync', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ url: vodUrl, streamers: streamersList })
+            });
+            const data = await res.json();
+
+            if (statusEl) statusEl.style.display = 'none';
+            if (!data.success) {
+                errorMsg.textContent = 'Failed to sync VODs: ' + (data.error || 'Unknown error');
+                return;
+            }
+
+            inputEl.value = '';
+            const tArea = document.getElementById('vod-usernames-input');
+            if (tArea) tArea.value = '';
+
+            // Add all returned configs as active streams
+            data.data.forEach((cfg) => {
+                activeStreams.push({
+                    type: 'twitch',
+                    id: cfg.video, // We can store video ID in `id` 
+                    label: cfg.label,
+                    uid: Date.now().toString() + Math.random(),
+                    isVod: true,
+                    time: cfg.time,
+                    offset: cfg.offset,
+                    total_offset: cfg.total_offset
+                });
+
+                if (cfg.offset && cfg.offset !== 0) {
+                    const absOff = Math.abs(cfg.offset).toFixed(2);
+                    notify(`${cfg.label} was ${absOff}s ${cfg.offset > 0 ? 'ahead of' : 'behind'} original`);
+                }
+            });
+
+            updateUrlHash();
+            setIsAllPaused(true);
+            updatePauseButtonIcon();
+            renderApp();
+
+        } catch (e) {
+            if (statusEl) statusEl.style.display = 'none';
+            errorMsg.textContent = 'Network error fetching VOD sync.';
+        }
+
+        return;
+    }
+
+    // Live stream handling
     const parsed = parseStreamInput(inputEl.value);
     if (!parsed) {
         errorMsg.textContent = 'Invalid channel or URL';
