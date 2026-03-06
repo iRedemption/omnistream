@@ -159,13 +159,14 @@ body.sidebar-open .sidebar-overlay {
 
 .sidebar-section-content {
     padding: 0 14px 14px 14px;
-    overflow: hidden;
+    overflow: visible;
     max-height: 2000px;
     transition: max-height 0.15s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.15s, padding 0.15s;
     opacity: 1;
 }
 
 .sidebar-section.collapsed .sidebar-section-content {
+    overflow: hidden;
     max-height: 0;
     opacity: 0;
     padding-top: 0;

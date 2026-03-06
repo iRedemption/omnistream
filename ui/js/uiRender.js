@@ -33,6 +33,64 @@ import {
     updatePauseButtonIcon,
 } from './players.js';
 
+// ── Portal Dropdown System ────────────────────────────────
+// We mount all dropdown menus directly on <body> so they are
+// never clipped by parent overflow:hidden/auto containers
+// (e.g. the sidebar with overflow-y:auto).
+
+let _activePortalMenu = null;
+
+function closePortalMenu() {
+    if (_activePortalMenu) {
+        _activePortalMenu.remove();
+        _activePortalMenu = null;
+    }
+}
+
+/**
+ * Build and mount a portal dropdown anchored to `anchorEl`.
+ * @param {HTMLElement} anchorEl  – the trigger button
+ * @param {Array<{label: string, icon: string, danger?: bool, action: ()=>void}>} items
+ */
+function openPortalMenu(anchorEl, items) {
+    closePortalMenu();
+
+    const rect = anchorEl.getBoundingClientRect();
+
+    const menu = document.createElement('div');
+    menu.className = 'dropdown-menu show';
+    menu.style.position = 'fixed';
+    menu.style.top = (rect.bottom + 4) + 'px';
+    menu.style.right = (window.innerWidth - rect.right) + 'px';
+    menu.style.left = 'auto';
+    menu.style.zIndex = '99999';
+
+    items.forEach(item => {
+        const btn = document.createElement('button');
+        btn.className = 'dropdown-item' + (item.danger ? ' danger' : '');
+        btn.innerHTML = `<i class="${item.icon}"></i> ${item.label}`;
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            closePortalMenu();
+            item.action();
+        });
+        menu.appendChild(btn);
+    });
+
+    document.body.appendChild(menu);
+    _activePortalMenu = menu;
+
+    // Close when clicking outside
+    const onOutsideClick = (e) => {
+        if (!menu.contains(e.target)) {
+            closePortalMenu();
+            document.removeEventListener('click', onOutsideClick, true);
+        }
+    };
+    // Use capture so it fires before stopPropagation on menu items
+    setTimeout(() => document.addEventListener('click', onOutsideClick, true), 0);
+}
+
 // ── Top-level render coordinator ──────────────────────────
 
 /**
@@ -288,28 +346,42 @@ export function renderGroupsUI() {
 
         // Header action buttons
         const headerActions = document.createElement('div');
-        headerActions.className = 'group-header-actions';
+        headerActions.style.display = 'flex';
+        headerActions.style.alignItems = 'center';
+        headerActions.style.gap = '4px';
+        headerActions.addEventListener('click', e => e.stopPropagation());
 
         const loadBtn = document.createElement('button');
         loadBtn.className = 'group-action-btn group-load-btn';
         loadBtn.title = 'Load group (replaces current streams)';
         loadBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-        loadBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            loadGroup(group.id);
-        });
+        loadBtn.style.color = '#4ade80';
+        loadBtn.style.background = 'transparent';
+        loadBtn.style.border = 'none';
+        loadBtn.style.cursor = 'pointer';
+        loadBtn.style.padding = '4px';
+        loadBtn.addEventListener('click', () => loadGroup(group.id));
 
-        const delBtn = document.createElement('button');
-        delBtn.className = 'group-action-btn group-delete-btn';
-        delBtn.title = 'Delete group';
-        delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-        delBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            deleteGroup(group.id);
-        });
+        const menuContainer = document.createElement('div');
+
+        const menuBtn = document.createElement('button');
+        menuBtn.className = 'menu-btn';
+        menuBtn.innerHTML = '<i class="fa-solid fa-ellipsis-vertical"></i>';
+
+        menuContainer.appendChild(menuBtn);
 
         headerActions.appendChild(loadBtn);
-        headerActions.appendChild(delBtn);
+        headerActions.appendChild(menuContainer);
+
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openPortalMenu(menuBtn, [
+                { label: 'Add Active Streams', icon: 'fa-solid fa-plus', action: () => addActiveToGroup(group.id) },
+                { label: 'Add Streamer', icon: 'fa-solid fa-user-plus', action: () => openAddStreamerToGroupModal(group.id) },
+                { label: 'Rename Group', icon: 'fa-solid fa-pen', action: () => openRenameGroupModal(group) },
+                { label: 'Delete Group', icon: 'fa-solid fa-trash', danger: true, action: () => { if (confirm(`Delete group "${group.name}"?`)) deleteGroup(group.id); } },
+            ]);
+        });
 
         header.appendChild(leftSide);
         header.appendChild(headerActions);
@@ -373,14 +445,41 @@ export function renderGroupsUI() {
                         info.appendChild(dot);
                     }
 
+                    const rowActionsContainer = document.createElement('div');
+                    rowActionsContainer.style.display = 'flex';
+                    rowActionsContainer.style.alignItems = 'center';
+                    rowActionsContainer.style.gap = '4px';
+
                     const addBtn = document.createElement('button');
                     addBtn.className = 'group-stream-add-btn';
                     addBtn.title = `Add ${stream.label} to current streams`;
                     addBtn.innerHTML = '<i class="fa-solid fa-plus"></i>';
                     addBtn.addEventListener('click', () => addStreamFromGroup(stream));
 
+                    const streamMenuContainer = document.createElement('div');
+
+                    const streamMenuBtn = document.createElement('button');
+                    streamMenuBtn.className = 'menu-btn';
+                    streamMenuBtn.innerHTML = '<i class="fa-solid fa-ellipsis-vertical"></i>';
+
+                    streamMenuContainer.appendChild(streamMenuBtn);
+
+                    streamMenuBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openPortalMenu(streamMenuBtn, [
+                            {
+                                label: 'Remove from Group', icon: 'fa-solid fa-trash', danger: true, action: () => {
+                                    removeStreamFromGroup(group.id, stream.id, stream.type);
+                                }
+                            },
+                        ]);
+                    });
+
+                    rowActionsContainer.appendChild(addBtn);
+                    rowActionsContainer.appendChild(streamMenuContainer);
+
                     row.appendChild(info);
-                    row.appendChild(addBtn);
+                    row.appendChild(rowActionsContainer);
                     streamList.appendChild(row);
                 });
             }
@@ -475,6 +574,167 @@ function addStreamFromGroup(stream) {
     renderApp();
     resizeStreams();
 }
+
+export function addActiveToGroup(groupId) {
+    const group = state.streamGroups.find(g => g.id === groupId);
+    if (!group || activeStreams.length === 0) return;
+
+    let added = 0;
+    activeStreams.forEach(stream => {
+        if (!group.streams.some(s => s.type === stream.type && s.id === stream.id)) {
+            group.streams.push({ type: stream.type, id: stream.id, label: stream.label });
+            added++;
+        }
+    });
+
+    if (added > 0) {
+        saveGroupsToStorage();
+        renderGroupsUI();
+        notify(`Added ${added} stream${added > 1 ? 's' : ''} to ${group.name}`);
+    } else {
+        notify(`All active streams are already in ${group.name}`);
+    }
+}
+
+export function removeStreamFromGroup(groupId, streamId, streamType) {
+    const group = state.streamGroups.find(g => g.id === groupId);
+    if (!group) return;
+
+    const initialLen = group.streams.length;
+    group.streams = group.streams.filter(s => !(s.id === streamId && s.type === streamType));
+
+    if (group.streams.length < initialLen) {
+        saveGroupsToStorage();
+        renderGroupsUI();
+    }
+}
+
+let activeEditGroupId = null;
+
+// ── Modals ──────────────────────────────────────
+
+export function openAddStreamerToGroupModal(groupId) {
+    activeEditGroupId = groupId;
+    const modal = document.getElementById('add-streamer-modal');
+    if (!modal) return;
+    const input = document.getElementById('add-streamer-input');
+    const errEl = document.getElementById('add-streamer-error');
+    if (input) input.value = '';
+    if (errEl) errEl.textContent = '';
+    modal.style.display = 'flex';
+    setTimeout(() => input.focus(), 50);
+}
+
+export function closeAddStreamerToGroupModal() {
+    activeEditGroupId = null;
+    const modal = document.getElementById('add-streamer-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+export async function confirmAddStreamerToGroup(parseStreamInput) {
+    if (!activeEditGroupId) return;
+    const input = document.getElementById('add-streamer-input');
+    const errEl = document.getElementById('add-streamer-error');
+    const iconContainer = document.getElementById('add-streamer-platform-icon');
+    const isYouTubeMode = iconContainer?.querySelector('i').classList.contains('fa-youtube');
+
+    errEl.textContent = '';
+    const group = state.streamGroups.find(g => g.id === activeEditGroupId);
+    if (!group) return;
+
+    const val = input.value.trim();
+    if (!val) return;
+
+    let parsed = parseStreamInput(val);
+
+    if (!parsed && isYouTubeMode) {
+        let q = val;
+        if (!q.startsWith('@') && !q.startsWith('UC')) q = '@' + q;
+        parsed = { type: 'youtube', id: q, label: q };
+    }
+
+    if (!parsed) {
+        errEl.textContent = 'Invalid channel or URL';
+        return;
+    }
+
+    const actuallyAdd = (p) => {
+        if (group.streams.some(s => s.type === p.type && s.id === p.id)) {
+            errEl.textContent = 'Stream already in group';
+            return;
+        }
+        group.streams.push({ type: p.type, id: p.id, label: p.label });
+        saveGroupsToStorage();
+        renderGroupsUI();
+        closeAddStreamerToGroupModal();
+    };
+
+    if (parsed.type === 'youtube') {
+        const btn = document.getElementById('modal-add-streamer-btn');
+        const origIcon = btn.innerHTML;
+        btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        btn.disabled = true;
+        try {
+            const res = await fetch(`/api/youtube/resolve?q=${encodeURIComponent(parsed.id)}`);
+            if (res.ok) {
+                const data = await res.json();
+                parsed.id = data.id;
+                parsed.label = data.title;
+                actuallyAdd(parsed);
+            } else {
+                errEl.textContent = 'Not found';
+            }
+        } catch (e) {
+            errEl.textContent = 'Error resolving YouTube channel';
+        } finally {
+            btn.innerHTML = origIcon;
+            btn.disabled = false;
+        }
+    } else {
+        actuallyAdd(parsed);
+    }
+}
+
+
+export function openRenameGroupModal(group) {
+    activeEditGroupId = group.id;
+    const modal = document.getElementById('rename-group-modal');
+    if (!modal) return;
+    const input = document.getElementById('rename-group-input');
+    const errEl = document.getElementById('rename-group-error');
+    if (input) input.value = group.name;
+    if (errEl) errEl.textContent = '';
+    modal.style.display = 'flex';
+    setTimeout(() => {
+        input.focus();
+        input.select();
+    }, 50);
+}
+
+export function closeRenameGroupModal() {
+    activeEditGroupId = null;
+    const modal = document.getElementById('rename-group-modal');
+    if (modal) modal.style.display = 'none';
+}
+
+export function confirmRenameGroup() {
+    if (!activeEditGroupId) return;
+    const input = document.getElementById('rename-group-input');
+    const errEl = document.getElementById('rename-group-error');
+    const name = input.value.trim();
+    if (!name) {
+        errEl.textContent = 'Please enter a group name.';
+        return;
+    }
+    const group = state.streamGroups.find(g => g.id === activeEditGroupId);
+    if (group) {
+        group.name = name;
+        saveGroupsToStorage();
+        renderGroupsUI();
+        closeRenameGroupModal();
+    }
+}
+
 
 // ── Save-Group Modal ──────────────────────────────────────
 

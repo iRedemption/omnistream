@@ -431,7 +431,6 @@
 
 .group-item {
     border-radius: 8px;
-    overflow: hidden;
     border: 1px solid var(--sidebar-border);
     background: rgba(24, 24, 27, 0.6);
 }
@@ -813,4 +812,84 @@
     height: 8px;
     background-color: #ff0000;
     border-radius: 50%;
+}
+
+/* ── Dropdown Menus ──────────────────────────────────────── */
+.menu-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 14px;
+    padding: 4px 6px;
+    border-radius: 4px;
+    transition: color 0.15s, background 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.menu-btn:hover {
+    color: white;
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.dropdown-menu-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.dropdown-menu {
+    position: absolute;
+    /* Default relative to container if not set by JS */
+    right: 0;
+    top: 100%;
+    margin-top: 4px;
+    background: #18181b;
+    border: 1px solid var(--sidebar-border);
+    border-radius: 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    display: none;
+    min-width: 150px;
+    flex-direction: column;
+    padding: 4px 4px;
+}
+
+.dropdown-menu.show {
+    display: flex;
+}
+
+.dropdown-item {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    padding: 8px 12px;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 13px;
+    transition: background 0.15s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+}
+
+.dropdown-item i {
+    width: 16px;
+    text-align: center;
+}
+
+.dropdown-item:hover {
+    background: rgba(46, 46, 54, 0.8);
+}
+
+.dropdown-item.danger {
+    color: #ff6b6b;
+}
+
+.dropdown-item.danger:hover {
+    background: rgba(255, 107, 107, 0.15);
 }

@@ -3,6 +3,32 @@ import { renderApp } from './uiRender.js';
 import { updateUrlHash } from './urlSync.js';
 import { resizeStreams } from './players.js';
 
+// ── Local portal menu helper (mirrors uiRender.js version) ──
+let _followedPortalMenu = null;
+function openFollowedPortalMenu(anchorEl, items) {
+    if (_followedPortalMenu) { _followedPortalMenu.remove(); _followedPortalMenu = null; }
+    const rect = anchorEl.getBoundingClientRect();
+    const menu = document.createElement('div');
+    menu.className = 'dropdown-menu show';
+    menu.style.position = 'fixed';
+    menu.style.top = (rect.bottom + 4) + 'px';
+    menu.style.right = (window.innerWidth - rect.right) + 'px';
+    menu.style.left = 'auto';
+    menu.style.zIndex = '99999';
+    items.forEach(item => {
+        const btn = document.createElement('button');
+        btn.className = 'dropdown-item' + (item.danger ? ' danger' : '');
+        btn.innerHTML = `<i class="${item.icon}"></i> ${item.label}`;
+        btn.addEventListener('click', (e) => { e.stopPropagation(); menu.remove(); _followedPortalMenu = null; item.action(); });
+        menu.appendChild(btn);
+    });
+    document.body.appendChild(menu);
+    _followedPortalMenu = menu;
+    setTimeout(() => document.addEventListener('click', function h(e) {
+        if (!menu.contains(e.target)) { menu.remove(); _followedPortalMenu = null; document.removeEventListener('click', h, true); }
+    }, true), 0);
+}
+
 let followedAccounts = JSON.parse(localStorage.getItem('omnistream_followed') || '[]');
 let followedTimes = JSON.parse(localStorage.getItem('omnistream_followed_times') || '{}');
 
@@ -401,10 +427,6 @@ function renderFollowedList() {
             status.style.fontWeight = 'normal';
         }
 
-        li.appendChild(avatarContainer);
-        li.appendChild(info);
-        li.appendChild(status);
-
         // Click handler to add stream
         li.addEventListener('click', () => {
             // Update last viewed
@@ -429,9 +451,16 @@ function renderFollowedList() {
             resizeStreams();
         });
 
-        // Add a small delete button for unfollow
-        li.addEventListener('contextmenu', (e) => {
-            e.preventDefault();
+        const actionsContainer = document.createElement('div');
+        actionsContainer.style.marginLeft = 'auto'; // push to right
+        actionsContainer.addEventListener('click', e => e.stopPropagation()); // prevent adding to active streams
+
+        const menuBtn = document.createElement('button');
+        menuBtn.className = 'menu-btn';
+        menuBtn.title = 'Edit';
+        menuBtn.innerHTML = '<i class="fa-solid fa-ellipsis-vertical"></i>';
+
+        const doUnfollow = () => {
             if (confirm(`Unfollow ${item.user_name || item.user_login}?`)) {
                 if (item.platform === 'youtube') {
                     followedAccounts = followedAccounts.filter(a => !(a.id === item.user_login && a.platform === 'youtube'));
@@ -441,7 +470,28 @@ function renderFollowedList() {
                 localStorage.setItem('omnistream_followed', JSON.stringify(followedAccounts));
                 fetchFollowedData();
             }
+        };
+
+        actionsContainer.appendChild(menuBtn);
+
+        menuBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            openFollowedPortalMenu(menuBtn, [
+                { label: 'Unfollow', icon: 'fa-solid fa-heart-crack', danger: true, action: doUnfollow },
+            ]);
         });
+
+        // Right-click also triggers unfollow for power users
+        li.addEventListener('contextmenu', (e) => {
+            e.preventDefault();
+            doUnfollow();
+        });
+
+        li.appendChild(avatarContainer);
+        li.appendChild(info);
+        li.appendChild(status);
+        li.appendChild(actionsContainer);
+
 
         listEl.appendChild(li);
     });

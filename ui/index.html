@@ -288,6 +288,39 @@
         style="position: fixed; bottom: 24px; right: 24px; display: flex; flex-direction: column; gap: 12px; z-index: 1000; pointer-events: none;">
     </div>
 
+    <!-- Add Streamer to Group Modal -->
+    <div id="add-streamer-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <h2 class="modal-title"><i class="fa-solid fa-user-plus"></i> Add Streamer</h2>
+            <div class="input-group" style="margin-bottom: 8px;">
+                <div class="platform-icon" id="add-streamer-platform-icon">
+                    <i class="fa-brands fa-twitch" style="color: #a970ff;"></i>
+                </div>
+                <input type="text" id="add-streamer-input" class="modal-input" placeholder="Username / URL"
+                    autocomplete="off" style="border: none;">
+            </div>
+            <div id="add-streamer-error" class="error-msg"></div>
+            <div class="modal-actions">
+                <button id="modal-cancel-streamer-btn" class="modal-btn modal-btn-cancel">Cancel</button>
+                <button id="modal-add-streamer-btn" class="modal-btn modal-btn-save">Add</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Rename Group Modal -->
+    <div id="rename-group-modal" class="modal-overlay" style="display:none;">
+        <div class="modal-box">
+            <h2 class="modal-title"><i class="fa-solid fa-pen"></i> Rename Group</h2>
+            <label class="modal-label" for="rename-group-input">Group Name</label>
+            <input type="text" id="rename-group-input" class="modal-input" autocomplete="off" maxlength="40">
+            <div id="rename-group-error" class="error-msg"></div>
+            <div class="modal-actions">
+                <button id="modal-cancel-rename-btn" class="modal-btn modal-btn-cancel">Cancel</button>
+                <button id="modal-save-rename-btn" class="modal-btn modal-btn-save">Save</button>
+            </div>
+        </div>
+    </div>
+
     <!-- Save Group Modal -->
     <div id="save-group-modal" class="modal-overlay" style="display:none;">
         <div class="modal-box">

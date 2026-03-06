@@ -36,6 +36,10 @@ import {
     openSaveGroupModal,
     closeSaveGroupModal,
     confirmSaveGroup,
+    closeRenameGroupModal,
+    confirmRenameGroup,
+    closeAddStreamerToGroupModal,
+    confirmAddStreamerToGroup
 } from './uiRender.js';
 
 import { initSidebarCollapsibility } from './collapsible.js';
@@ -315,6 +319,29 @@ document.getElementById('save-group-modal').addEventListener('click', (e) => {
     if (e.target === document.getElementById('save-group-modal')) closeSaveGroupModal();
 });
 
+// ── Rename Group Modal ────────────────────────────────────
+document.getElementById('modal-cancel-rename-btn').addEventListener('click', closeRenameGroupModal);
+document.getElementById('modal-save-rename-btn').addEventListener('click', confirmRenameGroup);
+document.getElementById('rename-group-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') confirmRenameGroup();
+    if (e.key === 'Escape') closeRenameGroupModal();
+});
+document.getElementById('rename-group-modal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('rename-group-modal')) closeRenameGroupModal();
+});
+
+// ── Add Streamer To Group Modal ───────────────────────────
+document.getElementById('modal-cancel-streamer-btn').addEventListener('click', closeAddStreamerToGroupModal);
+document.getElementById('modal-add-streamer-btn').addEventListener('click', () => confirmAddStreamerToGroup(parseStreamInput));
+document.getElementById('add-streamer-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') confirmAddStreamerToGroup(parseStreamInput);
+    if (e.key === 'Escape') closeAddStreamerToGroupModal();
+});
+document.getElementById('add-streamer-modal').addEventListener('click', (e) => {
+    if (e.target === document.getElementById('add-streamer-modal')) closeAddStreamerToGroupModal();
+});
+setupPlatformToggle('add-streamer-platform-icon', 'add-streamer-input');
+
 // ═══════════════════════════════════════════════════════════
 // Initialisation: load from URL hash, then render
 // ═══════════════════════════════════════════════════════════
@@ -390,3 +417,4 @@ initSidebarCollapsibility();
 // Initialize Followed Channels
 initFollowedChannels();
 
+// Dropdowns are portal-mounted on body and self-manage their close listeners.
