@@ -286,6 +286,29 @@ func main() {
 		} else if strings.HasPrefix(q, "@") {
 			apiURL += "&forHandle=" + url.QueryEscape(q)
 		} else {
+			// If it's 11 chars, it might be a video ID.
+			if len(q) == 11 && !strings.ContainsAny(q, " @/.") {
+				videoURL := "https://www.googleapis.com/youtube/v3/videos?part=snippet&id=" + url.QueryEscape(q) + "&key=" + apiKey
+				vResp, err := http.Get(videoURL)
+				if err == nil {
+					defer vResp.Body.Close()
+					var vData struct {
+						Items []struct {
+							Snippet struct {
+								ChannelTitle string `json:"channelTitle"`
+							} `json:"snippet"`
+						} `json:"items"`
+					}
+					if json.NewDecoder(vResp.Body).Decode(&vData) == nil && len(vData.Items) > 0 {
+						json.NewEncoder(w).Encode(map[string]string{
+							"id":    q,
+							"title": vData.Items[0].Snippet.ChannelTitle,
+						})
+						return
+					}
+				}
+			}
+
 			// fallback try forHandle then forUsername
 			// The new youtube api usually deals with handles for almost everything.
 			// Try as forUsername first

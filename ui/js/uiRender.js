@@ -24,6 +24,7 @@ import * as state from './state.js';
 
 import { updateUrlHash } from './urlSync.js';
 import { saveGroupsToStorage } from './storage.js';
+import { getFollowedStatus } from './followed_channels.js';
 import {
     updateStreamsIframes,
     resizeStreams,
@@ -242,6 +243,9 @@ export function updateChatDropdown() {
 /**
  * Rebuild the #groups-list element from streamGroups state.
  */
+const groupStatusCache = new Map(); // id -> { isLive: bool, lastChecked: timestamp }
+const fetchingGroups = new Set(); // id -> boolean
+
 export function renderGroupsUI() {
     const list = document.getElementById('groups-list');
     const noMsg = document.getElementById('no-groups-msg');
@@ -314,6 +318,8 @@ export function renderGroupsUI() {
                 expandedGroups.delete(group.id);
             } else {
                 expandedGroups.add(group.id);
+                // Trigger fetching of statuses for group members
+                checkGroupLiveStatus(group);
             }
             renderGroupsUI();
         });
@@ -339,13 +345,33 @@ export function renderGroupsUI() {
                     info.className = 'group-stream-info';
 
                     const icon = document.createElement('i');
-                    icon.className = 'fa-brands fa-twitch';
+                    icon.className = stream.type === 'twitch' ? 'fa-brands fa-twitch' : 'fa-brands fa-youtube';
+                    if (stream.type === 'youtube') icon.style.color = '#ff0000';
 
                     const label = document.createElement('span');
                     label.textContent = stream.label;
 
                     info.appendChild(icon);
                     info.appendChild(label);
+
+                    // Live dot indicator
+                    const followedStatus = getFollowedStatus(stream.id, stream.type);
+                    let isLive = false;
+                    if (followedStatus) {
+                        isLive = followedStatus.is_live;
+                    } else {
+                        const cached = groupStatusCache.get(stream.id + '_' + stream.type);
+                        if (cached) isLive = cached.isLive;
+                    }
+
+                    if (isLive) {
+                        const dot = document.createElement('div');
+                        dot.className = 'live-dot';
+                        dot.style.marginLeft = '4px';
+                        dot.style.width = '6px';
+                        dot.style.height = '6px';
+                        info.appendChild(dot);
+                    }
 
                     const addBtn = document.createElement('button');
                     addBtn.className = 'group-stream-add-btn';
@@ -364,6 +390,59 @@ export function renderGroupsUI() {
 
         list.appendChild(groupEl);
     });
+}
+
+async function checkGroupLiveStatus(group) {
+    const now = Date.now();
+    const cacheExpiry = 60000 * 3; // 3 minutes
+
+    const streamsToCheck = group.streams.filter(s => {
+        // Only check if NOT followed
+        if (getFollowedStatus(s.id, s.type)) return false;
+
+        const cached = groupStatusCache.get(s.id + '_' + s.type);
+        if (cached && (now - cached.lastChecked) < cacheExpiry) return false;
+
+        return true;
+    });
+
+    if (streamsToCheck.length === 0) return;
+
+    // Fetch Twitch
+    const tStreams = streamsToCheck.filter(s => s.type === 'twitch');
+    if (tStreams.length > 0) {
+        const logins = tStreams.map(s => s.id).join(',');
+        fetch(`/api/twitch/followed?logins=${logins}`)
+            .then(r => r.json())
+            .then(data => {
+                const liveSet = new Set(data.filter(d => d.is_live).map(d => d.user_login));
+                tStreams.forEach(s => {
+                    groupStatusCache.set(s.id + '_twitch', {
+                        isLive: liveSet.has(s.id),
+                        lastChecked: Date.now()
+                    });
+                });
+                renderGroupsUI();
+            }).catch(e => console.error('Twitch group status check failed', e));
+    }
+
+    // Fetch YouTube
+    const yStreams = streamsToCheck.filter(s => s.type === 'youtube');
+    if (yStreams.length > 0) {
+        const ids = yStreams.map(s => s.id).join(',');
+        fetch(`/api/youtube/followed?ids=${ids}`)
+            .then(r => r.json())
+            .then(data => {
+                const liveSet = new Set(data.filter(d => d.is_live).map(d => d.user_login));
+                yStreams.forEach(s => {
+                    groupStatusCache.set(s.id + '_youtube', {
+                        isLive: liveSet.has(s.id),
+                        lastChecked: Date.now()
+                    });
+                });
+                renderGroupsUI();
+            }).catch(e => console.error('YouTube group status check failed', e));
+    }
 }
 
 // ── Group Actions ─────────────────────────────────────────
@@ -400,10 +479,9 @@ function addStreamFromGroup(stream) {
 // ── Save-Group Modal ──────────────────────────────────────
 
 export function openSaveGroupModal() {
-    const twitchStreams = activeStreams.filter(s => s.type === 'twitch');
-    if (twitchStreams.length === 0) {
+    if (activeStreams.length === 0) {
         const err = document.getElementById('add-error');
-        err.textContent = 'No Twitch streams to save.';
+        err.textContent = 'No streams to save.';
         setTimeout(() => { err.textContent = ''; }, 2500);
         return;
     }
@@ -428,14 +506,13 @@ export function confirmSaveGroup() {
         errEl.textContent = 'Please enter a group name.';
         return;
     }
-    const twitchStreams = activeStreams
-        .filter(s => s.type === 'twitch')
+    const streamsToSave = activeStreams
         .map(s => ({ type: s.type, id: s.id, label: s.label }));
 
     const group = {
         id: Date.now().toString(),
         name,
-        streams: twitchStreams,
+        streams: streamsToSave,
     };
     state.streamGroups.push(group);
     saveGroupsToStorage();
@@ -474,6 +551,8 @@ export async function handleAdd(parseStreamInput) {
     const errorMsg = document.getElementById('add-error');
     const inputEl = document.getElementById('stream-input');
     const streamTypeToggle = document.getElementById('stream-type-toggle');
+    const platformIconContainer = document.getElementById('platform-icon-container');
+    const isYouTubeMode = platformIconContainer?.querySelector('i').classList.contains('fa-youtube');
     const isVod = streamTypeToggle ? !!streamTypeToggle.querySelector('.toggle-btn.active[data-value="vod"]') : false;
     errorMsg.textContent = '';
 
@@ -543,10 +622,40 @@ export async function handleAdd(parseStreamInput) {
     }
 
     // Live stream handling
-    const parsed = parseStreamInput(inputEl.value);
+    let parsed = parseStreamInput(inputEl.value);
+
+    // If not detected as URL, but YouTube icon is selected, treat as YT handle/username
+    if (!parsed && isYouTubeMode && inputEl.value.trim()) {
+        let q = inputEl.value.trim();
+        if (!q.startsWith('@') && !q.startsWith('UC')) q = '@' + q;
+        parsed = { type: 'youtube', id: q, label: q };
+    }
+
     if (!parsed) {
         errorMsg.textContent = 'Invalid channel or URL';
         return;
+    }
+
+    // Resolve YouTube names and IDs
+    if (parsed.type === 'youtube') {
+        const addBtn = document.getElementById('add-stream-btn');
+        const origIcon = addBtn.innerHTML;
+        addBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+        addBtn.disabled = true;
+
+        try {
+            const res = await fetch(`/api/youtube/resolve?q=${encodeURIComponent(parsed.id)}`);
+            if (res.ok) {
+                const data = await res.json();
+                parsed.id = data.id;
+                parsed.label = data.title;
+            }
+        } catch (e) {
+            console.error('YouTube resolve failed', e);
+        } finally {
+            addBtn.innerHTML = origIcon;
+            addBtn.disabled = false;
+        }
     }
     if (activeStreams.some(s => s.type === parsed.type && s.id === parsed.id)) {
         errorMsg.textContent = 'Stream already added';
@@ -555,7 +664,6 @@ export async function handleAdd(parseStreamInput) {
 
     activeStreams.push({ ...parsed, uid: Date.now().toString() });
     inputEl.value = '';
-    const platformIconContainer = document.getElementById('platform-icon-container');
     if (platformIconContainer) {
         platformIconContainer.innerHTML = '<i class="fa-brands fa-twitch" style="color: #a970ff;"></i>';
     }

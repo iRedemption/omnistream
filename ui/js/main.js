@@ -157,8 +157,8 @@ function setupPlatformToggle(iconContainerId, inputElId) {
         const parsed = parseStreamInput(val);
 
         let type = null;
-        if (parsed) {
-            type = parsed.type;
+        if (parsed && parsed.type === 'youtube') {
+            type = 'youtube';
         } else if (val.includes('youtube.com') || val.includes('youtu.be')) {
             type = 'youtube';
         } else if (val.includes('twitch.tv')) {

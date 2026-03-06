@@ -6,10 +6,14 @@ import { resizeStreams } from './players.js';
 let followedAccounts = JSON.parse(localStorage.getItem('omnistream_followed') || '[]');
 let followedTimes = JSON.parse(localStorage.getItem('omnistream_followed_times') || '{}');
 
+let isFetching = false;
 let currentData = [];
 let sortMode = localStorage.getItem('omnistream_followed_sort') || 'viewers';
 let showingAll = false;
-let isFetching = false;
+
+export function getFollowedStatus(loginOrId, platform) {
+    return currentData.find(d => d.user_login === loginOrId && (d.platform === platform || (!d.platform && platform === 'twitch')));
+}
 
 export function initFollowedChannels() {
     const showBtn = document.getElementById('show-follow-input-btn');
@@ -106,8 +110,8 @@ export function initFollowedChannels() {
                         q = path.split('/')[1]; // custom url like /WatchALTER
                     }
                 } else if (!val.startsWith('@') && !val.startsWith('UC')) {
-                    // Try to assume it's a handle if they just typed 'ludwig' -> '@ludwig'
-                    // but we'll let the backend handle the forUsername vs forHandle logic.
+                    // Prepend @ if it looks like a handle/name and doesn't have it
+                    q = '@' + val;
                 }
             } catch (e) { }
 
@@ -313,10 +317,40 @@ function renderFollowedList() {
         if (item.title) li.title = item.title;
         else li.title = item.user_name || item.user_login;
 
+        const avatarContainer = document.createElement('div');
+        avatarContainer.style.position = 'relative';
+        avatarContainer.style.display = 'inline-block';
+        avatarContainer.style.marginRight = '10px';
+        avatarContainer.style.flexShrink = '0';
+
         const img = document.createElement('img');
         img.className = 'followed-avatar';
         img.src = item.profile_image_url;
+        if (!item.is_live) {
+            img.style.filter = 'grayscale(100%)';
+            img.style.opacity = '0.7';
+        }
+        img.style.marginRight = '0'; // reset margin since container handles it
         img.onerror = () => { img.src = 'https://static-cdn.jtvnw.net/jtv_user_pictures/8a6381c7-d0c0-4576-b179-38bd5ce1d6af-profile_image-300x300.png'; };
+
+        avatarContainer.appendChild(img);
+
+        if (item.platform === 'youtube') {
+            const ytBadge = document.createElement('div');
+            ytBadge.style.position = 'absolute';
+            ytBadge.style.bottom = '-2px';
+            ytBadge.style.right = '-2px';
+            ytBadge.style.background = '#18181b';
+            ytBadge.style.borderRadius = '50%';
+            ytBadge.style.width = '14px';
+            ytBadge.style.height = '14px';
+            ytBadge.style.display = 'flex';
+            ytBadge.style.alignItems = 'center';
+            ytBadge.style.justifyContent = 'center';
+            ytBadge.style.boxShadow = '0 0 4px rgba(0,0,0,0.8)';
+            ytBadge.innerHTML = '<i class="fa-brands fa-youtube" style="color: #ff0000; font-size: 8px;"></i>';
+            avatarContainer.appendChild(ytBadge);
+        }
 
         const info = document.createElement('div');
         info.className = 'followed-info';
@@ -367,7 +401,7 @@ function renderFollowedList() {
             status.style.fontWeight = 'normal';
         }
 
-        li.appendChild(img);
+        li.appendChild(avatarContainer);
         li.appendChild(info);
         li.appendChild(status);
 

@@ -65,7 +65,26 @@ export function parseStreamInput(input) {
 
     const ytId = extractYouTubeId(input);
     if (ytId) {
-        return { type: 'youtube', id: ytId, label: `YT: ${ytId}` };
+        return { type: 'youtube', id: ytId, label: ytId };
+    }
+
+    // Handle Generic YouTube URL (Channel, handle, etc)
+    if (input.includes('youtube.com/') || input.includes('youtu.be/')) {
+        let q = input;
+        try {
+            const url = new URL(input.startsWith('http') ? input : 'https://' + input);
+            const path = url.pathname;
+            if (path.startsWith('/@')) {
+                q = path.substring(1);
+            } else if (path.startsWith('/c/')) {
+                q = path.substring(3);
+            } else if (path.startsWith('/channel/')) {
+                q = path.substring(9);
+            } else if (path.length > 1) {
+                q = path.split('/')[1];
+            }
+        } catch (e) { }
+        return { type: 'youtube', id: q, label: q };
     }
 
     const twitchMatch = input.match(/(?:twitch\.tv\/)([a-zA-Z0-9_]+)/i);
