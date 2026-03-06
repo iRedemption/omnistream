@@ -38,6 +38,8 @@ import {
     confirmSaveGroup,
 } from './uiRender.js';
 
+import { initSidebarCollapsibility } from './collapsible.js';
+
 // ── Sidebar Toggle ────────────────────────────────────────
 const sidebar = document.getElementById('sidebar');
 const openSidebarBtn = document.getElementById('open-sidebar-btn');
@@ -340,3 +342,6 @@ if (chatStreamId && activeStreams.length > 0) {
         showChatPanel();
     }
 }
+
+// Initialize collapsible sidebar sections
+initSidebarCollapsibility();
