@@ -728,3 +728,82 @@
     background: linear-gradient(135deg, #a970ff, #7c3aed);
     color: #fff;
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Followed Channels List
+════════════════════════════════════════════════════════════ */
+.followed-list {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.followed-item {
+    display: flex;
+    align-items: center;
+    padding: 6px 12px 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s;
+    user-select: none;
+    text-decoration: none;
+}
+
+.followed-item:hover {
+    background: rgba(46, 46, 54, 0.6);
+}
+
+.followed-avatar {
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin-right: 10px;
+}
+
+.followed-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.followed-name {
+    font-size: 13px;
+    font-weight: 600;
+    color: white;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.followed-game {
+    font-size: 11px;
+    color: #a0a0ab;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 1px;
+}
+
+.followed-status {
+    display: flex;
+    align-items: center;
+    font-size: 12px;
+    color: var(--text-primary);
+    flex-shrink: 0;
+    font-weight: 500;
+}
+
+.followed-viewers {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.live-dot {
+    width: 8px;
+    height: 8px;
+    background-color: #ff0000;
+    border-radius: 50%;
+}

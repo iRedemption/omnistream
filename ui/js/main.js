@@ -39,6 +39,7 @@ import {
 } from './uiRender.js';
 
 import { initSidebarCollapsibility } from './collapsible.js';
+import { initFollowedChannels } from './followed_channels.js';
 
 // ── Sidebar Toggle ────────────────────────────────────────
 const sidebar = document.getElementById('sidebar');
@@ -345,3 +346,7 @@ if (chatStreamId && activeStreams.length > 0) {
 
 // Initialize collapsible sidebar sections
 initSidebarCollapsibility();
+
+// Initialize Followed Channels
+initFollowedChannels();
+

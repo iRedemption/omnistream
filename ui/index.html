@@ -28,6 +28,55 @@
                         class="fa-solid fa-xmark"></i></button>
             </div>
 
+            <div class="sidebar-section" data-section-id="followed-channels">
+                <div class="sidebar-section-header">
+                    <div class="header-title-group"
+                        style="width: 100%; display: flex; align-items: center; justify-content: space-between;">
+                        <h3><i class="fa-solid fa-heart"></i> Followed</h3>
+                        <div class="section-actions" style="margin-right: 8px;">
+                            <button id="show-follow-input-btn" class="save-group-btn" title="Follow Channel"><i
+                                    class="fa-solid fa-plus"></i></button>
+                        </div>
+                    </div>
+                    <i class="fa-solid fa-chevron-down toggle-icon" style="margin-left: 4px;"></i>
+                </div>
+                <div class="sidebar-section-content">
+                    <div class="control-group" style="margin-bottom: 8px;">
+                        <div class="input-group" id="follow-input-group" style="display: none; margin-top: 5px;">
+                            <input type="text" id="follow-input" placeholder="Channel name / URL" autocomplete="off">
+                            <button id="add-followed-btn" class="purple-btn" title="Follow"><i
+                                    class="fa-solid fa-check"></i></button>
+                        </div>
+                        <div class="control-group" id="followed-sort-container" style="margin-top: 5px;">
+                            <select id="followed-sort-select" class="styled-select"
+                                style="font-size: 0.85em; padding: 4px;">
+                                <option value="viewers">Sort: Viewers (High->Low)</option>
+                                <option value="last_viewed">Sort: Last Viewed</option>
+                                <option value="alphabetical">Sort: A-Z</option>
+                            </select>
+                        </div>
+                        <div
+                            style="font-size: 0.75em; color: var(--text-muted); margin-top: 4px; font-style: italic; opacity: 0.8;">
+                            <i class="fa-solid fa-circle-info" style="font-size: 0.9em; margin-right: 3px;"></i>
+                            Right-click to unfollow
+                        </div>
+                    </div>
+                    <div id="follow-error-msg" class="error-msg"></div>
+                    <ul id="followed-channels-list" class="followed-list"
+                        style="margin: 0; padding: 0; list-style: none;">
+                        <!-- Rendered dynamically -->
+                    </ul>
+                    <div id="followed-pagination"
+                        style="display: none; justify-content: space-between; margin-top: 8px; font-size: 0.85em; font-weight: 500;">
+                        <span id="show-more-followed"
+                            style="color: var(--accent); cursor: pointer; visibility: hidden;">Show More</span>
+                        <span id="show-less-followed" style="color: var(--accent); cursor: pointer; display: none;">Show
+                            Less</span>
+                    </div>
+                    <div id="no-followed-msg" class="empty-msg">No followed channels.</div>
+                </div>
+            </div>
+
             <div class="sidebar-section" data-section-id="add-stream">
                 <div class="sidebar-section-header">
                     <h3><i class="fa-solid fa-circle-plus"></i> Add Stream</h3>
