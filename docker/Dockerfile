@@ -14,16 +14,20 @@ RUN CGO_ENABLED=0 go build -o main .
 # Run stage
 FROM alpine:latest
 
+# Install Python, pip, ffmpeg, and yt-dlp
+RUN apk add --no-cache python3 py3-pip ffmpeg curl
+
+# Install yt-dlp via pip
+RUN pip3 install yt-dlp numpy scipy
+
 WORKDIR /app
 
 # Copy the built binary
 COPY --from=builder /app/main .
 
-# Copy the static folders and index.html
-COPY index.html ./
-COPY css/ ./css/
-COPY js/ ./js/
-COPY assets/ ./assets/
+# Copy the static folders and python scripts
+COPY ui/ ./ui/
+COPY scripts/ ./scripts/
 
 # Expose HTTP port
 EXPOSE 8080

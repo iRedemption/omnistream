@@ -667,7 +667,7 @@ def main():
     parser.add_argument("streamers", nargs="+", help="Channels to sync against")
     parser.add_argument("--id",      dest="client_id",     help="Twitch Client ID")
     parser.add_argument("--secret",  dest="client_secret", help="Twitch Client Secret")
-    parser.add_argument("--out",     default="sync_viewer.html", help="Output HTML filename")
+    parser.add_argument("--out",     default="testing/outputs/sync_viewer.html", help="Output HTML filename")
     parser.add_argument("--no-refine", action="store_true",
                         help="Skip audio cross-correlation (use rough twitchsync timestamps only)")
 
@@ -743,6 +743,9 @@ def main():
 
     # ── Step 4: generate HTML ──────────────────────────────────────────────
     print(f"\n[3/3] Generating HTML…")
+    out_dir = os.path.dirname(args.out)
+    if out_dir:
+        os.makedirs(out_dir, exist_ok=True)
     generate_html(matches, args.out)
 
 

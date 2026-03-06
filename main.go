@@ -19,9 +19,9 @@ func main() {
 	}
 
 	// Serve static folders securely
-	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("./css"))))
-	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("./js"))))
-	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("./assets"))))
+	http.Handle("/css/", http.StripPrefix("/css/", http.FileServer(http.Dir("./ui/css"))))
+	http.Handle("/js/", http.StripPrefix("/js/", http.FileServer(http.Dir("./ui/js"))))
+	http.Handle("/assets/", http.StripPrefix("/assets/", http.FileServer(http.Dir("./ui/assets"))))
 
 	// Placeholder /api/health JSON route
 	http.HandleFunc("/api/health", func(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +35,7 @@ func main() {
 			http.NotFound(w, r)
 			return
 		}
-		http.ServeFile(w, r, "index.html")
+		http.ServeFile(w, r, "ui/index.html")
 	})
 
 	http.HandleFunc("/api/vod-sync", func(w http.ResponseWriter, r *http.Request) {
@@ -50,7 +50,7 @@ func main() {
 		}
 		reqBytes, _ := json.Marshal(req)
 
-		cmd := exec.Command("python", "vod_sync.py")
+		cmd := exec.Command("python", "scripts/vod_sync.py")
 		cmd.Env = os.Environ() // Ensure environment variables are passed to Python
 		cmd.Stdin = bytes.NewReader(reqBytes)
 		out, err := cmd.CombinedOutput()
