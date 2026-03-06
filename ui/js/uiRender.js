@@ -858,14 +858,20 @@ export async function handleAdd(parseStreamInput) {
                 return;
             }
 
-            inputEl.value = '';
             const tArea = document.getElementById('vod-usernames-input');
             if (tArea) tArea.value = '';
 
-            notify(`Synced ${data.data.length} VOD${data.data.length > 1 ? 's' : ''}`, 'fa-solid fa-arrows-rotate');
+            // Count newly added streams to adjust notification
+            let addedCount = 0;
 
             // Add all returned configs as active streams
             data.data.forEach((cfg) => {
+                // Check if already in activeStreams (prevent duplicates)
+                if (activeStreams.some(s => s.id === cfg.video && s.type === 'twitch')) {
+                    return;
+                }
+
+                addedCount++;
                 activeStreams.push({
                     type: 'twitch',
                     id: cfg.video, // We can store video ID in `id` 
@@ -894,6 +900,12 @@ export async function handleAdd(parseStreamInput) {
                     notify(`${cfg.label} refined by ${absOff}s`, 'fa-solid fa-wave-square');
                 }
             });
+
+            if (addedCount > 0) {
+                notify(`Synced ${addedCount} VOD${addedCount > 1 ? 's' : ''}`, 'fa-solid fa-arrows-rotate');
+            } else {
+                notify(`No new VODs to sync`, 'fa-solid fa-info');
+            }
 
             updateUrlHash();
             setIsAllPaused(true);

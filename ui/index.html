@@ -92,18 +92,22 @@
                                     class="fa-solid fa-video"></i> VOD</button>
                         </div>
                     </div>
-                    <div class="input-group">
-                        <div class="platform-icon" id="platform-icon-container">
-                            <i class="fa-brands fa-twitch" style="color: #a970ff;"></i>
+                    <div class="input-group" id="main-stream-input-group" style="flex-direction: column;">
+                        <div style="display: flex; width: 100%;">
+                            <div class="platform-icon" id="platform-icon-container">
+                                <i class="fa-brands fa-twitch" style="color: #a970ff;"></i>
+                            </div>
+                            <input type="text" id="stream-input" placeholder="Username / URL" autocomplete="off"
+                                style="flex: 1;">
+                            <button id="add-stream-btn" class="purple-btn" title="Add Stream"><i
+                                    class="fa-solid fa-plus"></i></button>
                         </div>
-                        <input type="text" id="stream-input" placeholder="Username / URL" autocomplete="off">
-                        <button id="add-stream-btn" class="purple-btn" title="Add Stream"><i
-                                class="fa-solid fa-plus"></i></button>
-                    </div>
-                    <div class="input-group" id="vod-usernames-container" style="display: none; margin-top: 8px;">
-                        <textarea id="vod-usernames-input" class="styled-input" rows="3"
-                            placeholder="Additional Twitch usernames to sync,&#10;separate by line breaks..."
-                            style="width: 100%; border-radius: 4px; padding: 6px;"></textarea>
+                        <div id="vod-usernames-container"
+                            style="display: none; border-top: 1px solid var(--sidebar-border); width: 100%;">
+                            <textarea id="vod-usernames-input"
+                                placeholder="Additional Twitch usernames to sync,&#10;separate by line breaks..."
+                                style="width: 100%; border: none; background: transparent; color: white; resize: vertical; min-height: 60px; outline: none; padding: 10px; font-family: inherit; font-size: 13px; display: block;"></textarea>
+                        </div>
                     </div>
                     <div id="vod-sync-status"
                         style="font-size: 0.85em; color: var(--accent); margin-top: 4px; display: none;"><i

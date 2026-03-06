@@ -7,6 +7,9 @@ server
 server.exe
 main
 main.exe
+omnistream
+omnistream.exe
 
-# Air live-reload temp directory
+# Generated files
 tmp/
+testing/outputs
