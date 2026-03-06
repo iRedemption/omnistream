@@ -24,8 +24,11 @@ export function updateUrlHash() {
 
     const hasVod = activeStreams.some(s => s.isVod);
     const parts = activeStreams.map(s => {
+        if (s.isVod) {
+            return `v=${s.type}~${s.id}~${s.time || '0s'}~${s.offset || 0}~${s.total_offset || 0}~${encodeURIComponent(s.label)}`;
+        }
         if (s.type === 'youtube') return 'yt_' + s.id;
-        return s.label; // For Twitch we use the label representing the streamer's name
+        return s.label; // For Twitch live streams we use the label representing the streamer's name
     });
 
     let basePath = hasVod ? '/vod/' + parts.join('/') : '/#' + parts.join('/');
@@ -35,9 +38,14 @@ export function updateUrlHash() {
     if (chatVisible && selectedChatUid) {
         const chatStream = activeStreams.find(s => s.uid === selectedChatUid);
         if (chatStream) {
-            const chatId = chatStream.type === 'youtube'
-                ? 'yt_' + chatStream.id
-                : chatStream.label;
+            let chatId;
+            if (chatStream.isVod) {
+                chatId = `v=${chatStream.id}`;
+            } else {
+                chatId = chatStream.type === 'youtube'
+                    ? 'yt_' + chatStream.id
+                    : chatStream.label;
+            }
             queryParts.push('chat=' + chatId);
         }
     }
@@ -46,9 +54,14 @@ export function updateUrlHash() {
     if (focusedStreamId) {
         const focusStream = activeStreams.find(s => s.uid === focusedStreamId);
         if (focusStream) {
-            const focusId = focusStream.type === 'youtube'
-                ? 'yt_' + focusStream.id
-                : focusStream.label;
+            let focusId;
+            if (focusStream.isVod) {
+                focusId = `v=${focusStream.id}`;
+            } else {
+                focusId = focusStream.type === 'youtube'
+                    ? 'yt_' + focusStream.id
+                    : focusStream.label;
+            }
             queryParts.push('focus=' + focusId);
         }
     }
@@ -79,7 +92,7 @@ export function decodeStreamsFromHash() {
         raw = window.location.hash.slice(1); // remove leading '#'
     }
 
-    if (!raw) return { streams: [], chatStreamId: null, focusStreamId: null, isVodRoute };
+    if (!raw) return { streams: [], chatStreamId: null, focusStreamId: null, isVodRoute: false };
 
     let chatStreamId = null;
     let focusStreamId = null;
@@ -94,16 +107,35 @@ export function decodeStreamsFromHash() {
     }
 
     const streams = raw.split('/').filter(Boolean).map(part => {
+        if (part.startsWith('v=')) {
+            const payload = part.slice(2);
+            const pieces = payload.split('~');
+            if (pieces.length >= 6) {
+                const type = pieces[0];
+                const id = pieces[1];
+                const time = pieces[2];
+                const offset = parseFloat(pieces[3]) || 0;
+                const totalOffset = parseFloat(pieces[4]) || 0;
+                const label = decodeURIComponent(pieces.slice(5).join('~'));
+                return {
+                    type,
+                    id,
+                    label,
+                    time,
+                    offset,
+                    total_offset: totalOffset,
+                    isVod: true,
+                    uid: Date.now().toString() + Math.random()
+                };
+            }
+        }
         if (part.startsWith('yt_')) {
             const id = part.slice(3);
             return { type: 'youtube', id, label: id, uid: Date.now().toString() + Math.random(), isVod: isVodRoute };
         }
         const id = decodeURIComponent(part).toLowerCase();
         // Since we don't know the exact video IDs if they just shared the /vod/name1/name2 link! 
-        // Wait, if they share a VOD link, the UI wouldn't know the video IDs from just names. 
-        // A complete sharing of VOD states requires either generating them server side, or ignoring the URL hydration for VOD for now, or letting `main.js` re-fetch them.
-        // But for VODs we'll just populate `id` with the name for now, though it won't play until synced... 
-        // But live streams work perfectly.
+        // For backwards compatibility we still return it, but it may have a broken player
         return { type: 'twitch', id, label: id, uid: Date.now().toString() + Math.random(), isVod: isVodRoute };
     });
 

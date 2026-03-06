@@ -221,12 +221,13 @@
     align-items: center;
     cursor: pointer;
     transition: opacity 0.3s, transform 0.2s, background 0.2s;
-    opacity: 0;
+    opacity: 1;
     font-size: 18px;
 }
 
-.floating-controls:hover .float-btn {
-    opacity: 1;
+/* Hide buttons only when sidebar is closed and not hovered */
+body:not(.sidebar-open) .floating-controls:not(:hover) .float-btn {
+    opacity: 0;
 }
 
 .float-btn:hover {

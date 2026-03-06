@@ -381,11 +381,14 @@ resizeStreams();
 // Restore focused stream from URL
 if (focusStreamId && activeStreams.length > 0) {
     let focusStream;
-    if (focusStreamId.startsWith('yt_')) {
+    if (focusStreamId.startsWith('v=')) {
+        const id = focusStreamId.slice(2);
+        focusStream = activeStreams.find(s => s.isVod && s.id === id);
+    } else if (focusStreamId.startsWith('yt_')) {
         const ytId = focusStreamId.slice(3);
-        focusStream = activeStreams.find(s => s.type === 'youtube' && s.id === ytId);
+        focusStream = activeStreams.find(s => !s.isVod && s.type === 'youtube' && s.id === ytId);
     } else {
-        focusStream = activeStreams.find(s => s.type === 'twitch' && s.id === focusStreamId);
+        focusStream = activeStreams.find(s => !s.isVod && s.type === 'twitch' && s.id === focusStreamId);
     }
     if (focusStream) {
         setFocusedStreamId(focusStream.uid);
@@ -397,11 +400,14 @@ if (focusStreamId && activeStreams.length > 0) {
 // Restore chat panel from URL
 if (chatStreamId && activeStreams.length > 0) {
     let chatStream;
-    if (chatStreamId.startsWith('yt_')) {
+    if (chatStreamId.startsWith('v=')) {
+        const id = chatStreamId.slice(2);
+        chatStream = activeStreams.find(s => s.isVod && s.id === id);
+    } else if (chatStreamId.startsWith('yt_')) {
         const ytId = chatStreamId.slice(3);
-        chatStream = activeStreams.find(s => s.type === 'youtube' && s.id === ytId);
+        chatStream = activeStreams.find(s => !s.isVod && s.type === 'youtube' && s.id === ytId);
     } else {
-        chatStream = activeStreams.find(s => s.type === 'twitch' && s.id === chatStreamId);
+        chatStream = activeStreams.find(s => !s.isVod && s.type === 'twitch' && s.id === chatStreamId);
     }
     if (chatStream) {
         setSelectedChatUid(chatStream.uid);

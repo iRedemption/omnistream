@@ -201,17 +201,19 @@ body.sidebar-open .sidebar-overlay {
 
 /* ── Floating Controls (Open Sidebar / Fullscreen / Pause) ─ */
 .floating-controls {
-    position: absolute;
+    position: fixed;
     top: 20px;
     left: 20px;
     display: flex;
     flex-direction: column;
     gap: 10px;
-    z-index: 50;
+    z-index: 110;
     padding: 40px;
     /* Hitbox area */
     margin: -40px;
     /* Offset hitbox */
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+        right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .floating-controls.side-right {
@@ -219,14 +221,14 @@ body.sidebar-open .sidebar-overlay {
     right: 20px;
 }
 
-/* Hide when sidebar is open */
-body.sidebar-open .floating-controls {
-    pointer-events: none;
+/* Stick to sidebar edge when sidebar is open (left side) */
+body.sidebar-open .floating-controls:not(.side-right) {
+    left: calc(var(--sidebar-width) + 12px);
 }
 
-body.sidebar-open .float-btn {
-    opacity: 0 !important;
-    transform: scale(0.9);
+/* Stick to sidebar edge when sidebar is open (right side) */
+body.sidebar-open .floating-controls.side-right {
+    right: calc(var(--sidebar-width) + 12px);
 }
 
 /* ── Streams Container ───────────────────────────────────── */
