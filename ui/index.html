@@ -109,41 +109,42 @@
                         style="font-size: 0.85em; color: var(--accent); margin-top: 4px; display: none;"><i
                             class="fa-solid fa-spinner fa-spin"></i> Syncing VODs...</div>
                     <div id="add-error" class="error-msg"></div>
-                </div>
-            </div>
 
-            <div class="sidebar-section" data-section-id="active-streams">
-                <div class="sidebar-section-header">
-                    <div class="header-title-group">
-                        <h3><i class="fa-solid fa-list-ul"></i> Active Streams</h3>
-                        <div class="section-actions">
-                            <button id="clear-all-btn" class="clear-all-btn" title="Clear all streams"><i
-                                    class="fa-solid fa-trash"></i></button>
-                            <button id="save-group-btn" class="save-group-btn"
-                                title="Save current Twitch streams as a group"><i
-                                    class="fa-solid fa-bookmark"></i></button>
+                    <!-- Nested sub-sections -->
+                    <div class="sidebar-section sub-section" data-section-id="active-streams">
+                        <div class="sidebar-section-header">
+                            <div class="header-title-group">
+                                <h3><i class="fa-solid fa-list-ul"></i> Active Streams</h3>
+                                <div class="section-actions">
+                                    <button id="clear-all-btn" class="clear-all-btn" title="Clear all streams"><i
+                                            class="fa-solid fa-trash"></i></button>
+                                    <button id="save-group-btn" class="save-group-btn"
+                                        title="Save current streams as a group"><i
+                                            class="fa-solid fa-bookmark"></i></button>
+                                </div>
+                            </div>
+                            <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="sidebar-section-content">
+                            <ul id="active-streams-list" class="stream-list">
+                                <!-- Stream list items rendered dynamically -->
+                            </ul>
+                            <div id="no-streams-msg" class="empty-msg">No active streams.</div>
                         </div>
                     </div>
-                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
-                </div>
-                <div class="sidebar-section-content">
-                    <ul id="active-streams-list" class="stream-list">
-                        <!-- Stream list items rendered dynamically -->
-                    </ul>
-                    <div id="no-streams-msg" class="empty-msg">No active streams.</div>
-                </div>
-            </div>
 
-            <div class="sidebar-section" id="stream-groups-section" data-section-id="stream-groups">
-                <div class="sidebar-section-header">
-                    <h3><i class="fa-solid fa-layer-group"></i> Stream Groups</h3>
-                    <i class="fa-solid fa-chevron-down toggle-icon"></i>
-                </div>
-                <div class="sidebar-section-content">
-                    <div id="groups-list" class="groups-list">
-                        <!-- Rendered dynamically -->
+                    <div class="sidebar-section sub-section" id="stream-groups-section" data-section-id="stream-groups">
+                        <div class="sidebar-section-header">
+                            <h3><i class="fa-solid fa-layer-group"></i> Stream Groups</h3>
+                            <i class="fa-solid fa-chevron-down toggle-icon"></i>
+                        </div>
+                        <div class="sidebar-section-content">
+                            <div id="groups-list" class="groups-list">
+                                <!-- Rendered dynamically -->
+                            </div>
+                            <div id="no-groups-msg" class="empty-msg">No saved groups yet.</div>
+                        </div>
                     </div>
-                    <div id="no-groups-msg" class="empty-msg">No saved groups yet.</div>
                 </div>
             </div>
 

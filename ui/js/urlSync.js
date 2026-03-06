@@ -96,7 +96,7 @@ export function decodeStreamsFromHash() {
     const streams = raw.split('/').filter(Boolean).map(part => {
         if (part.startsWith('yt_')) {
             const id = part.slice(3);
-            return { type: 'youtube', id, label: 'YT: ' + id, uid: Date.now().toString() + Math.random(), isVod: isVodRoute };
+            return { type: 'youtube', id, label: id, uid: Date.now().toString() + Math.random(), isVod: isVodRoute };
         }
         const id = decodeURIComponent(part).toLowerCase();
         // Since we don't know the exact video IDs if they just shared the /vod/name1/name2 link! 

@@ -322,6 +322,23 @@ document.getElementById('save-group-modal').addEventListener('click', (e) => {
 const { streams: hashStreams, chatStreamId, focusStreamId } = decodeStreamsFromHash();
 hashStreams.forEach(s => activeStreams.push(s));
 
+// Resolve labels for YouTube streams loaded from URL
+activeStreams.filter(s => s.type === 'youtube').forEach(async (s) => {
+    try {
+        const res = await fetch(`/api/youtube/resolve?q=${encodeURIComponent(s.id)}`);
+        if (res.ok) {
+            const data = await res.json();
+            s.label = data.title;
+            // Update UI once the name is fetched
+            renderApp();
+            updateUrlHash(); // Update URL if the label changed? Actually no, keep hash stable. 
+            // wait, if label is in URL? No, url uses ID for YT.
+        }
+    } catch (e) {
+        console.error('Initial YouTube resolve failed', e);
+    }
+});
+
 // Show or hide sidebar depending on whether streams were loaded
 if (activeStreams.length > 0) {
     sidebar.classList.add('collapsed');
