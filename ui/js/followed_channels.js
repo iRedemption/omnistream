@@ -115,7 +115,7 @@ export function initFollowedChannels() {
             localStorage.setItem('omnistream_followed', JSON.stringify(followedAccounts));
 
             inputEl.value = '';
-            inputGroup.style.display = 'none';
+            // inputGroup.style.display = 'none'; // Keep open per user request
             fetchFollowedData();
         } else {
             // YouTube
@@ -161,7 +161,7 @@ export function initFollowedChannels() {
                     localStorage.setItem('omnistream_followed', JSON.stringify(followedAccounts));
 
                     inputEl.value = '';
-                    inputGroup.style.display = 'none';
+                    // inputGroup.style.display = 'none'; // Keep open per user request
                     fetchFollowedData();
                 })
                 .catch(err => {
@@ -413,9 +413,12 @@ function renderFollowedList() {
             if (vCount < 1000) {
                 vText.textContent = vCount.toString();
             } else if (vCount >= 100000) {
-                vText.textContent = Math.round(vCount / 1000) + 'K';
+                const kValue = Math.round(vCount / 1000);
+                vText.textContent = kValue + 'K';
             } else {
-                vText.textContent = (vCount / 1000).toFixed(1) + 'K';
+                const kValue = (vCount / 1000).toFixed(1);
+                // Remove trailing .0 if present
+                vText.textContent = kValue.endsWith('.0') ? kValue.slice(0, -2) + 'K' : kValue + 'K';
             }
 
             viewers.appendChild(dot);
@@ -453,6 +456,7 @@ function renderFollowedList() {
 
         const actionsContainer = document.createElement('div');
         actionsContainer.style.marginLeft = 'auto'; // push to right
+        actionsContainer.style.paddingLeft = '12px'; // move slightly further to the right away from status
         actionsContainer.addEventListener('click', e => e.stopPropagation()); // prevent adding to active streams
 
         const menuBtn = document.createElement('button');
