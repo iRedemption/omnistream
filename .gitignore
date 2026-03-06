@@ -5,6 +5,8 @@
 # Go binaries
 server
 server.exe
+main
+main.exe
 
 # Air live-reload temp directory
 tmp/

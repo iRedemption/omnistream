@@ -120,6 +120,8 @@ export function removeStream(uid) {
     }
     const idx = activeStreams.findIndex(s => s.uid === uid);
     if (idx !== -1) {
+        const label = activeStreams[idx].label;
+        notify(`Removed ${label}`, 'fa-solid fa-trash-can');
         activeStreams.splice(idx, 1);
         updateUrlHash();
         renderApp();
@@ -562,6 +564,7 @@ function loadGroup(groupId) {
     group.streams.forEach(s => {
         activeStreams.push({ ...s, uid: Date.now().toString() + Math.random() });
     });
+    notify(`Loaded group: ${group.name}`, 'fa-solid fa-layer-group');
     updateUrlHash();
     renderApp();
     resizeStreams();
@@ -778,14 +781,19 @@ export function confirmSaveGroup() {
     saveGroupsToStorage();
     closeSaveGroupModal();
     renderGroupsUI();
+    notify(`Saved group: ${name}`, 'fa-solid fa-bookmark');
 }
 
 // ── Handle Add Stream ─────────────────────────────────────
 
-export function notify(message) {
+export function notify(message, iconClass = 'fa-solid fa-circle-info') {
     const center = document.getElementById('notification-center');
     if (!center) return;
     const div = document.createElement('div');
+    // We use innerHTML to allow for the icon, but sanitize message if needed.
+    // However, since we control the messages here, we can trust them.
+    div.innerHTML = `<i class="${iconClass}" style="color: #a970ff; margin-right: 10px;"></i><span>${message}</span>`;
+
     div.style.background = '#1f1f23';
     div.style.borderLeft = '4px solid #a970ff';
     div.style.padding = '12px 20px';
@@ -794,7 +802,12 @@ export function notify(message) {
     div.style.pointerEvents = 'auto';
     div.style.maxWidth = '320px';
     div.style.transition = 'all 0.3s ease-out';
-    div.textContent = message;
+    div.style.display = 'flex';
+    div.style.alignItems = 'center';
+    div.style.color = '#efeff1';
+    div.style.fontSize = '0.95em';
+    div.style.marginBottom = '8px';
+
     center.appendChild(div);
     setTimeout(() => {
         div.style.opacity = '0';
@@ -849,6 +862,8 @@ export async function handleAdd(parseStreamInput) {
             const tArea = document.getElementById('vod-usernames-input');
             if (tArea) tArea.value = '';
 
+            notify(`Synced ${data.data.length} VOD${data.data.length > 1 ? 's' : ''}`, 'fa-solid fa-arrows-rotate');
+
             // Add all returned configs as active streams
             data.data.forEach((cfg) => {
                 activeStreams.push({
@@ -862,9 +877,21 @@ export async function handleAdd(parseStreamInput) {
                     total_offset: cfg.total_offset
                 });
 
-                if (cfg.offset && cfg.offset !== 0) {
+                if (cfg.total_offset !== undefined && cfg.total_offset !== 0) {
+                    const totalOff = Math.abs(cfg.total_offset);
+                    const minutes = Math.floor(totalOff / 60);
+                    const seconds = (totalOff % 60).toFixed(1);
+                    const timeStr = minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
+                    const direction = cfg.total_offset > 0 ? 'behind' : 'ahead'; // VOD time is larger -> playhead further in -> started earlier? No. 
+                    // Totaloffset = correctedSec - srcSecs. 
+                    // If > 0, target VOD playhead is further in than source. 
+                    // Usually implies target streamer started their VOD earlier.
+                    notify(`${cfg.label} sync: ${timeStr} ${direction}`, 'fa-solid fa-clock-rotate-left');
+                }
+
+                if (cfg.offset && Math.abs(cfg.offset) > 0.1) {
                     const absOff = Math.abs(cfg.offset).toFixed(2);
-                    notify(`${cfg.label} was ${absOff}s ${cfg.offset > 0 ? 'ahead of' : 'behind'} original`);
+                    notify(`${cfg.label} refined by ${absOff}s`, 'fa-solid fa-wave-square');
                 }
             });
 
@@ -923,6 +950,7 @@ export async function handleAdd(parseStreamInput) {
     }
 
     activeStreams.push({ ...parsed, uid: Date.now().toString() });
+    notify(`Added ${parsed.label}`, parsed.type === 'twitch' ? 'fa-brands fa-twitch' : 'fa-brands fa-youtube');
     inputEl.value = '';
     if (platformIconContainer) {
         platformIconContainer.innerHTML = '<i class="fa-brands fa-twitch" style="color: #a970ff;"></i>';

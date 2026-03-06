@@ -1,93 +1,34 @@
 package main
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
-	"io"
 	"log"
 	"net/http"
 	"net/url"
 	"os"
-	"os/exec"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"omnistream/internal/api"
+
 	"github.com/joho/godotenv"
 )
 
 var (
-	twitchToken      string
-	twitchTokenMutex sync.Mutex
-	twitchTokenExp   time.Time
-
 	// YouTube Live Cache: channelId -> cached response
 	youtubeLiveCache    sync.Map
 	youtubeLiveCacheDur = 5 * time.Minute
 )
 
 type YTChannelCacheEntry struct {
-	Response TwitchFollowedResponse
+	Response api.TwitchFollowedResponse
 	Exp      time.Time
 }
 
-func getTwitchToken(clientID, clientSecret string) (string, error) {
-	twitchTokenMutex.Lock()
-	defer twitchTokenMutex.Unlock()
-
-	if twitchToken != "" && time.Now().Before(twitchTokenExp) {
-		return twitchToken, nil
-	}
-
-	authURL := "https://id.twitch.tv/oauth2/token"
-	data := url.Values{}
-	data.Set("client_id", clientID)
-	data.Set("client_secret", clientSecret)
-	data.Set("grant_type", "client_credentials")
-
-	req, err := http.NewRequest("POST", authURL, strings.NewReader(data.Encode()))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
-
-	client := &http.Client{Timeout: 10 * time.Second}
-	resp, err := client.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		body, _ := io.ReadAll(resp.Body)
-		return "", fmt.Errorf("failed to get token: %s", string(body))
-	}
-
-	var res struct {
-		AccessToken string `json:"access_token"`
-		ExpiresIn   int    `json:"expires_in"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
-		return "", err
-	}
-
-	twitchToken = res.AccessToken
-	twitchTokenExp = time.Now().Add(time.Duration(res.ExpiresIn-60) * time.Second)
-	return twitchToken, nil
-}
-
-type TwitchFollowedResponse struct {
-	UserName        string `json:"user_name"`
-	UserLogin       string `json:"user_login"`
-	ProfileImageURL string `json:"profile_image_url"`
-	IsLive          bool   `json:"is_live"`
-	ViewerCount     int    `json:"viewer_count"`
-	Title           string `json:"title"`
-	GameName        string `json:"game_name"`
-	VideoID         string `json:"video_id,omitempty"`
-}
+// removed TwitchFollowedResponse struct, now in api package
 
 func main() {
 	// Load .env file
@@ -115,38 +56,14 @@ func main() {
 		http.ServeFile(w, r, "ui/index.html")
 	})
 
-	http.HandleFunc("/api/vod-sync", func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != "POST" {
-			http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
-			return
-		}
-		var req map[string]interface{}
-		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-			http.Error(w, err.Error(), http.StatusBadRequest)
-			return
-		}
-		reqBytes, _ := json.Marshal(req)
-
-		cmd := exec.Command("python", "scripts/vod_sync.py")
-		cmd.Env = os.Environ() // Ensure environment variables are passed to Python
-		cmd.Stdin = bytes.NewReader(reqBytes)
-		out, err := cmd.CombinedOutput()
-
-		w.Header().Set("Content-Type", "application/json")
-		if err != nil {
-			log.Printf("Python script error: %v %s", err, string(out))
-			json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "error": err.Error(), "details": string(out)})
-			return
-		}
-		w.Write(out)
-	})
+	http.HandleFunc("/api/vod-sync", api.HandleVodSync)
 
 	http.HandleFunc("/api/twitch/followed", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 
 		loginsParam := r.URL.Query().Get("logins")
 		if loginsParam == "" {
-			json.NewEncoder(w).Encode([]TwitchFollowedResponse{})
+			json.NewEncoder(w).Encode([]api.TwitchFollowedResponse{})
 			return
 		}
 
@@ -163,7 +80,7 @@ func main() {
 			return
 		}
 
-		token, err := getTwitchToken(clientID, clientSecret)
+		token, err := api.GetTwitchToken(clientID, clientSecret)
 		if err != nil {
 			http.Error(w, "Failed to authenticate with Twitch", http.StatusInternalServerError)
 			return
@@ -245,9 +162,9 @@ func main() {
 		}
 
 		// 4. Build Response
-		var result []TwitchFollowedResponse
+		var result []api.TwitchFollowedResponse
 		for _, u := range usersData.Data {
-			out := TwitchFollowedResponse{
+			out := api.TwitchFollowedResponse{
 				UserName:        u.DisplayName,
 				UserLogin:       u.Login,
 				ProfileImageURL: u.ProfileImageURL,
@@ -367,7 +284,7 @@ func main() {
 		w.Header().Set("Content-Type", "application/json")
 		idsParam := r.URL.Query().Get("ids")
 		if idsParam == "" {
-			json.NewEncoder(w).Encode([]TwitchFollowedResponse{}) // reuse the struct
+			json.NewEncoder(w).Encode([]api.TwitchFollowedResponse{}) // reuse the struct
 			return
 		}
 
@@ -485,7 +402,7 @@ func main() {
 		wg.Wait()
 
 		// 3. For the live streams, fetch viewer count using videos.list
-		var result []TwitchFollowedResponse
+		var result []api.TwitchFollowedResponse
 		for _, chId := range ids {
 			info := channelInfoMap[chId]
 
@@ -502,7 +419,7 @@ func main() {
 				}
 			}
 
-			out := TwitchFollowedResponse{
+			out := api.TwitchFollowedResponse{
 				UserName:        info.Title,
 				UserLogin:       chId, // use channelId as login for Youtube
 				ProfileImageURL: info.ProfileImageURL,
