@@ -786,16 +786,16 @@ export function confirmSaveGroup() {
 
 // ── Handle Add Stream ─────────────────────────────────────
 
-export function notify(message, iconClass = 'fa-solid fa-circle-info') {
+export function notify(message, iconClass = 'fa-solid fa-circle-info', isDanger = false) {
     const center = document.getElementById('notification-center');
     if (!center) return;
     const div = document.createElement('div');
-    // We use innerHTML to allow for the icon, but sanitize message if needed.
-    // However, since we control the messages here, we can trust them.
-    div.innerHTML = `<i class="${iconClass}" style="color: #a970ff; margin-right: 10px;"></i><span>${message}</span>`;
+    const accentColor = isDanger ? '#ff6b6b' : '#a970ff';
+
+    div.innerHTML = `<i class="${iconClass}" style="color: ${accentColor}; margin-right: 10px;"></i><span>${message}</span>`;
 
     div.style.background = '#1f1f23';
-    div.style.borderLeft = '4px solid #a970ff';
+    div.style.borderLeft = `4px solid ${accentColor}`;
     div.style.padding = '12px 20px';
     div.style.borderRadius = '4px';
     div.style.boxShadow = '0 4px 12px rgba(0,0,0,0.5)';
@@ -901,10 +901,18 @@ export async function handleAdd(parseStreamInput) {
                 }
             });
 
-            if (addedCount > 0) {
-                notify(`Synced ${addedCount} VOD${addedCount > 1 ? 's' : ''}`, 'fa-solid fa-arrows-rotate');
-            } else {
-                notify(`No new VODs to sync`, 'fa-solid fa-info');
+            // Notify for newly synced VODs
+            data.data.forEach(cfg => {
+                // If this label was newly added, show fetch success
+                // We'll just notify for all successfully returned configs for clarity
+                notify(`Synced VOD for ${cfg.label}`, 'fa-solid fa-video');
+            });
+
+            // Notify for missing VODs in red
+            if (data.errors && data.errors.length > 0) {
+                data.errors.forEach(streamer => {
+                    notify(`No VOD found for ${streamer}`, 'fa-solid fa-triangle-exclamation', true);
+                });
             }
 
             updateUrlHash();

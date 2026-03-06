@@ -94,6 +94,13 @@ type VodSyncConfig struct {
 	TotalOffset float64 `json:"total_offset"`
 }
 
+type VodSyncResponse struct {
+	Success bool            `json:"success"`
+	Data    []VodSyncConfig `json:"data"`
+	Errors  []string        `json:"errors,omitempty"`
+	Error   string          `json:"error,omitempty"`
+}
+
 type TwitchVideoResp struct {
 	Data []struct {
 		Id        string `json:"id"`
@@ -369,11 +376,12 @@ func HandleVodSync(w http.ResponseWriter, r *http.Request) {
 			absoluteTime = createdAt.Add(time.Duration(totalSecs) * time.Second)
 		}
 	} else {
-		json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "error": "Could not parse clip or video ID from URL"})
+		json.NewEncoder(w).Encode(VodSyncResponse{Success: false, Error: "Could not parse clip or video ID from URL"})
 		return
 	}
 
 	var configs []VodSyncConfig
+	var missingStreamers []string
 	configs = append(configs, VodSyncConfig{
 		Label:       sourceLabel,
 		Video:       videoId,
@@ -435,6 +443,8 @@ func HandleVodSync(w http.ResponseWriter, r *http.Request) {
 				Offset:      0.0,
 				TotalOffset: 0.0,
 			})
+		} else {
+			missingStreamers = append(missingStreamers, streamer)
 		}
 	}
 
@@ -480,8 +490,9 @@ func HandleVodSync(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	json.NewEncoder(w).Encode(map[string]interface{}{
-		"success": true,
-		"data":    configs,
+	json.NewEncoder(w).Encode(VodSyncResponse{
+		Success: true,
+		Data:    configs,
+		Errors:  missingStreamers,
 	})
 }
