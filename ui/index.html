@@ -41,25 +41,26 @@
                     <i class="fa-solid fa-chevron-down toggle-icon" style="margin-left: 4px;"></i>
                 </div>
                 <div class="sidebar-section-content">
-                    <div class="control-group" style="margin-bottom: 8px;">
-                        <div class="input-group" id="follow-input-group" style="display: none; margin-top: 5px;">
-                            <input type="text" id="follow-input" placeholder="Channel name / URL" autocomplete="off">
-                            <button id="add-followed-btn" class="purple-btn" title="Follow"><i
-                                    class="fa-solid fa-check"></i></button>
+                    <div class="input-group" id="follow-input-group" style="display: none; margin-bottom: 8px;">
+                        <div class="platform-icon" id="follow-platform-icon-container">
+                            <i class="fa-brands fa-twitch" style="color: #a970ff;"></i>
                         </div>
-                        <div class="control-group" id="followed-sort-container" style="margin-top: 5px;">
-                            <select id="followed-sort-select" class="styled-select"
-                                style="font-size: 0.85em; padding: 4px;">
-                                <option value="viewers">Sort: Viewers (High->Low)</option>
-                                <option value="last_viewed">Sort: Last Viewed</option>
-                                <option value="alphabetical">Sort: A-Z</option>
-                            </select>
-                        </div>
-                        <div
-                            style="font-size: 0.75em; color: var(--text-muted); margin-top: 4px; font-style: italic; opacity: 0.8;">
-                            <i class="fa-solid fa-circle-info" style="font-size: 0.9em; margin-right: 3px;"></i>
-                            Right-click to unfollow
-                        </div>
+                        <input type="text" id="follow-input" placeholder="Username / URL" autocomplete="off">
+                        <button id="add-followed-btn" class="purple-btn" title="Follow"><i
+                                class="fa-solid fa-plus"></i></button>
+                    </div>
+                    <div class="control-group" id="followed-sort-container">
+                        <select id="followed-sort-select" class="styled-select"
+                            style="font-size: 0.85em; padding: 4px;">
+                            <option value="viewers">Sort: Viewers (High->Low)</option>
+                            <option value="last_viewed">Sort: Last Viewed</option>
+                            <option value="alphabetical">Sort: A-Z</option>
+                        </select>
+                    </div>
+                    <div
+                        style="font-size: 0.75em; color: var(--text-muted); margin-top: 4px; font-style: italic; opacity: 0.8;">
+                        <i class="fa-solid fa-circle-info" style="font-size: 0.9em; margin-right: 3px;"></i>
+                        Right-click to unfollow
                     </div>
                     <div id="follow-error-msg" class="error-msg"></div>
                     <ul id="followed-channels-list" class="followed-list"
@@ -95,7 +96,7 @@
                         <div class="platform-icon" id="platform-icon-container">
                             <i class="fa-brands fa-twitch" style="color: #a970ff;"></i>
                         </div>
-                        <input type="text" id="stream-input" placeholder="Channel name / URL" autocomplete="off">
+                        <input type="text" id="stream-input" placeholder="Username / URL" autocomplete="off">
                         <button id="add-stream-btn" class="purple-btn" title="Add Stream"><i
                                 class="fa-solid fa-plus"></i></button>
                     </div>

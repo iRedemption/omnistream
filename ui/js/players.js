@@ -214,7 +214,14 @@ export function updateStreamsIframes() {
                 const iframe = document.createElement('iframe');
                 iframe.allowFullscreen = true;
                 const ytAutoplay = (stream.isVod || isAllPaused) ? 0 : 1;
-                iframe.src = `https://www.youtube.com/embed/${stream.id}?autoplay=${ytAutoplay}&mute=1&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(originUrl)}`;
+
+                let src = `https://www.youtube.com/embed/${stream.id}?`;
+                if (stream.id.startsWith('UC') && stream.id.length === 24) {
+                    src = `https://www.youtube.com/embed/live_stream?channel=${stream.id}&`;
+                }
+                src += `autoplay=${ytAutoplay}&mute=1&playsinline=1&enablejsapi=1&origin=${encodeURIComponent(originUrl)}`;
+
+                iframe.src = src;
                 iframe.setAttribute('allow', 'autoplay; encrypted-media; fullscreen');
                 wrapper.appendChild(iframe);
                 streamsContainer.appendChild(wrapper);
@@ -340,7 +347,8 @@ export function buildChatUrl(stream) {
     if (stream.type === 'twitch') {
         return `https://www.twitch.tv/embed/${stream.id}/chat?darkpopout&parent=${hostname}`;
     } else if (stream.type === 'youtube') {
-        return `https://www.youtube.com/live_chat?v=${stream.id}&embed_domain=${hostname}`;
+        const vid = stream.videoId || stream.id;
+        return `https://www.youtube.com/live_chat?v=${vid}&embed_domain=${hostname}`;
     }
     return '';
 }

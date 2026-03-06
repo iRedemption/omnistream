@@ -55,34 +55,94 @@ export function initFollowedChannels() {
             return;
         }
 
-        let login = val.toLowerCase();
-        try {
-            if (val.includes('twitch.tv/')) {
-                const url = new URL(val.startsWith('http') ? val : 'https://' + val);
-                login = url.pathname.split('/')[1].toLowerCase();
+        const platformIconContainer = document.getElementById('follow-platform-icon-container');
+        const isTwitch = platformIconContainer.querySelector('i').classList.contains('fa-twitch');
+        const platform = isTwitch ? 'twitch' : 'youtube';
+
+        if (platform === 'twitch') {
+            let login = val.toLowerCase();
+            try {
+                if (val.includes('twitch.tv/')) {
+                    const url = new URL(val.startsWith('http') ? val : 'https://' + val);
+                    login = url.pathname.split('/')[1].toLowerCase();
+                }
+            } catch (e) { }
+
+            if (!login) {
+                errorMsg.textContent = 'Invalid channel';
+                setTimeout(() => errorMsg.textContent = '', 3000);
+                return;
             }
-        } catch (e) { }
 
-        if (!login) {
-            errorMsg.textContent = 'Invalid channel';
-            setTimeout(() => errorMsg.textContent = '', 3000);
-            return;
+            if (followedAccounts.some(a => a.login === login && (a.platform === 'twitch' || !a.platform))) {
+                errorMsg.textContent = 'Already followed';
+                setTimeout(() => errorMsg.textContent = '', 3000);
+                return;
+            }
+
+            errorMsg.textContent = '';
+            followedAccounts.push({ login, platform: 'twitch', addedAt: Date.now() });
+            localStorage.setItem('omnistream_followed', JSON.stringify(followedAccounts));
+
+            inputEl.value = '';
+            inputGroup.style.display = 'none';
+            fetchFollowedData();
+        } else {
+            // YouTube
+            // Show loading
+            let q = val;
+            try {
+                if (val.includes('youtube.com/') || val.includes('youtu.be/')) {
+                    const url = new URL(val.startsWith('http') ? val : 'https://' + val);
+                    const path = url.pathname;
+
+                    if (path.startsWith('/@')) {
+                        q = path.substring(1); // keep the @
+                    } else if (path.startsWith('/c/')) {
+                        q = path.substring(3); // username
+                    } else if (path.startsWith('/channel/')) {
+                        q = path.substring(9); // channel ID
+                    } else if (path.length > 1) {
+                        q = path.split('/')[1]; // custom url like /WatchALTER
+                    }
+                } else if (!val.startsWith('@') && !val.startsWith('UC')) {
+                    // Try to assume it's a handle if they just typed 'ludwig' -> '@ludwig'
+                    // but we'll let the backend handle the forUsername vs forHandle logic.
+                }
+            } catch (e) { }
+
+            const origIcon = document.getElementById('add-followed-btn').innerHTML;
+            document.getElementById('add-followed-btn').innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            document.getElementById('add-followed-btn').disabled = true;
+
+            fetch(`/api/youtube/resolve?q=${encodeURIComponent(q)}`)
+                .then(r => {
+                    if (!r.ok) throw new Error('Not found');
+                    return r.json();
+                })
+                .then(data => {
+                    const id = data.id;
+                    if (followedAccounts.some(a => a.id === id && a.platform === 'youtube')) {
+                        errorMsg.textContent = 'Already followed';
+                        setTimeout(() => errorMsg.textContent = '', 3000);
+                        return;
+                    }
+                    followedAccounts.push({ login: data.title, id: data.id, platform: 'youtube', addedAt: Date.now() });
+                    localStorage.setItem('omnistream_followed', JSON.stringify(followedAccounts));
+
+                    inputEl.value = '';
+                    inputGroup.style.display = 'none';
+                    fetchFollowedData();
+                })
+                .catch(err => {
+                    errorMsg.textContent = 'YouTube channel not found';
+                    setTimeout(() => errorMsg.textContent = '', 3000);
+                })
+                .finally(() => {
+                    document.getElementById('add-followed-btn').innerHTML = origIcon;
+                    document.getElementById('add-followed-btn').disabled = false;
+                });
         }
-
-        if (followedAccounts.some(a => a.login === login)) {
-            errorMsg.textContent = 'Already followed';
-            setTimeout(() => errorMsg.textContent = '', 3000);
-            return;
-        }
-
-        errorMsg.textContent = '';
-        followedAccounts.push({ login, addedAt: Date.now() });
-        localStorage.setItem('omnistream_followed', JSON.stringify(followedAccounts));
-
-        inputEl.value = '';
-        inputGroup.style.display = 'none';
-
-        fetchFollowedData();
     };
 
     addBtn.addEventListener('click', triggerAdd);
@@ -124,14 +184,41 @@ async function fetchFollowedData() {
     isFetching = true;
 
     try {
-        const logins = followedAccounts.map(a => a.login).join(',');
-        const res = await fetch(`/api/twitch/followed?logins=${logins}`);
-        const data = await res.json();
+        const twitchAccounts = followedAccounts.filter(a => a.platform === 'twitch' || !a.platform);
+        const youtubeAccounts = followedAccounts.filter(a => a.platform === 'youtube');
 
-        if (Array.isArray(data)) {
-            currentData = data;
-            renderFollowedList();
+        let allData = [];
+
+        // Fetch Twitch
+        if (twitchAccounts.length > 0) {
+            const logins = twitchAccounts.map(a => a.login).join(',');
+            const res = await fetch(`/api/twitch/followed?logins=${logins}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data)) {
+                    data.forEach(d => d.platform = 'twitch');
+                    allData = allData.concat(data);
+                }
+            }
         }
+
+        // Fetch YouTube
+        if (youtubeAccounts.length > 0) {
+            const ids = youtubeAccounts.map(a => a.id).join(',');
+            const res = await fetch(`/api/youtube/followed?ids=${ids}`);
+            if (res.ok) {
+                const data = await res.json();
+                if (Array.isArray(data)) {
+                    data.forEach(d => {
+                        d.platform = 'youtube';
+                    });
+                    allData = allData.concat(data);
+                }
+            }
+        }
+
+        currentData = allData;
+        renderFollowedList();
     } catch (e) {
         console.error('Failed to fetch followed channels', e);
     } finally {
@@ -162,13 +249,29 @@ function renderFollowedList() {
     }));
 
     // Find if the accounts exist but api failed
-    const apiLogins = new Set(enrichedData.map(d => d.user_login));
+    const apiLoginsT = new Set(enrichedData.filter(d => d.platform === 'twitch').map(d => d.user_login));
+    const apiLoginsY = new Set(enrichedData.filter(d => d.platform === 'youtube').map(d => d.user_login));
+
     for (const acc of followedAccounts) {
-        if (!apiLogins.has(acc.login)) {
+        const platform = acc.platform || 'twitch';
+        if (platform === 'twitch' && !apiLoginsT.has(acc.login)) {
             enrichedData.push({
                 user_name: acc.login,
                 user_login: acc.login,
+                platform: 'twitch',
                 profile_image_url: 'https://static-cdn.jtvnw.net/jtv_user_pictures/8a6381c7-d0c0-4576-b179-38bd5ce1d6af-profile_image-300x300.png',
+                is_live: false,
+                viewer_count: 0,
+                title: '',
+                game_name: '',
+                lastViewed: followedTimes[acc.login] || 0
+            });
+        } else if (platform === 'youtube' && !apiLoginsY.has(acc.id)) {
+            enrichedData.push({
+                user_name: acc.login,
+                user_login: acc.id,
+                platform: 'youtube',
+                profile_image_url: 'https://www.youtube.com/img/desktop/yt_1200.png', // Generic YT icon
                 is_live: false,
                 viewer_count: 0,
                 title: '',
@@ -276,12 +379,14 @@ function renderFollowedList() {
             renderFollowedList(); // re-sort if necessary
 
             // Add stream
-            if (activeStreams.some(s => s.type === 'twitch' && s.id === item.user_login)) {
+            const streamType = item.platform || 'twitch';
+            if (activeStreams.some(s => s.type === streamType && s.id === item.user_login)) {
                 return; // already added
             }
             activeStreams.push({
-                type: 'twitch',
+                type: streamType,
                 id: item.user_login,
+                videoId: item.video_id,
                 label: item.user_name || item.user_login,
                 uid: Date.now().toString()
             });
@@ -294,7 +399,11 @@ function renderFollowedList() {
         li.addEventListener('contextmenu', (e) => {
             e.preventDefault();
             if (confirm(`Unfollow ${item.user_name || item.user_login}?`)) {
-                followedAccounts = followedAccounts.filter(a => a.login !== item.user_login);
+                if (item.platform === 'youtube') {
+                    followedAccounts = followedAccounts.filter(a => !(a.id === item.user_login && a.platform === 'youtube'));
+                } else {
+                    followedAccounts = followedAccounts.filter(a => !(a.login === item.user_login && (a.platform === 'twitch' || !a.platform)));
+                }
                 localStorage.setItem('omnistream_followed', JSON.stringify(followedAccounts));
                 fetchFollowedData();
             }

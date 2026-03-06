@@ -134,27 +134,50 @@ inputEl.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') handleAdd(parseStreamInput);
 });
 
-// Update platform icon as the user types
-const platformIconContainer = document.getElementById('platform-icon-container');
-if (platformIconContainer) {
+// Helper to setup platform icon toggle logic
+function setupPlatformToggle(iconContainerId, inputElId) {
+    const container = document.getElementById(iconContainerId);
+    const inputEl = document.getElementById(inputElId);
+    if (!container || !inputEl) return;
+
+    container.addEventListener('click', () => {
+        const currentIcon = container.querySelector('i');
+        const isTwitch = currentIcon.classList.contains('fa-twitch');
+
+        if (isTwitch) {
+            container.innerHTML = '<i class="fa-brands fa-youtube" style="color: #ff0000;"></i>';
+        } else {
+            container.innerHTML = '<i class="fa-brands fa-twitch" style="color: #a970ff;"></i>';
+        }
+        inputEl.placeholder = 'Username / URL';
+    });
+
     inputEl.addEventListener('input', () => {
         const val = inputEl.value.trim().toLowerCase();
         const parsed = parseStreamInput(val);
 
-        let type = 'twitch';
+        let type = null;
         if (parsed) {
             type = parsed.type;
         } else if (val.includes('youtube.com') || val.includes('youtu.be')) {
             type = 'youtube';
+        } else if (val.includes('twitch.tv')) {
+            type = 'twitch';
         }
 
         if (type === 'youtube') {
-            platformIconContainer.innerHTML = '<i class="fa-brands fa-youtube" style="color: #ff0000;"></i>';
-        } else {
-            platformIconContainer.innerHTML = '<i class="fa-brands fa-twitch" style="color: #a970ff;"></i>';
+            container.innerHTML = '<i class="fa-brands fa-youtube" style="color: #ff0000;"></i>';
+            inputEl.placeholder = 'Username / URL';
+        } else if (type === 'twitch') {
+            container.innerHTML = '<i class="fa-brands fa-twitch" style="color: #a970ff;"></i>';
+            inputEl.placeholder = 'Username / URL';
         }
     });
 }
+
+
+setupPlatformToggle('platform-icon-container', 'stream-input');
+setupPlatformToggle('follow-platform-icon-container', 'follow-input');
 
 // ── Clear All Streams ─────────────────────────────────────
 const clearAllBtn = document.getElementById('clear-all-btn');

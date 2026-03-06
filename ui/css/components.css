@@ -42,6 +42,13 @@
     border-right: 1px solid var(--sidebar-border);
     font-size: 14px;
     flex-shrink: 0;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    user-select: none;
+}
+
+.platform-icon:hover {
+    background: rgba(45, 45, 54, 0.8);
 }
 
 .input-group input {
