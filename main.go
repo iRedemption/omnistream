@@ -31,9 +31,9 @@ type YTChannelCacheEntry struct {
 // removed TwitchFollowedResponse struct, now in api package
 
 func main() {
-	// Load .env file
+	// Load .env file for local development
 	if err := godotenv.Load(); err != nil {
-		log.Println("No .env file found")
+		log.Println("Info: No .env file found locally, relying on passed environment variables.")
 	}
 
 	// Serve static folders securely

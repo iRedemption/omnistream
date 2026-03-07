@@ -6,6 +6,8 @@ services:
     container_name: omnistream
     ports:
       - "5500:8080"
+    env_file:
+      - .env
     restart: unless-stopped
     networks:
       - omnistream-network

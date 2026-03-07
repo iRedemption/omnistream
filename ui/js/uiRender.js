@@ -922,7 +922,8 @@ export async function handleAdd(parseStreamInput) {
 
         } catch (e) {
             if (statusEl) statusEl.style.display = 'none';
-            errorMsg.textContent = 'Network error fetching VOD sync.';
+            console.error('VOD sync fetch error:', e);
+            errorMsg.textContent = 'Network error fetching VOD sync: ' + (e.message || e);
         }
 
         return;

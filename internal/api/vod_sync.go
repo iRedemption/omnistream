@@ -305,12 +305,43 @@ func correlate(d1, d2 []int16) int {
 	return bestLag
 }
 
+type keepAliveWriter struct {
+	http.ResponseWriter
+	mu sync.Mutex
+}
+
+func (k *keepAliveWriter) Write(p []byte) (int, error) {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	return k.ResponseWriter.Write(p)
+}
+
+func (k *keepAliveWriter) KeepAlive() {
+	k.mu.Lock()
+	defer k.mu.Unlock()
+	k.ResponseWriter.Write([]byte(" "))
+	if f, ok := k.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+}
+
 func HandleVodSync(w http.ResponseWriter, r *http.Request) {
 	if r.Method != "POST" {
 		http.Error(w, "Method not allowed", http.StatusMethodNotAllowed)
 		return
 	}
+
 	w.Header().Set("Content-Type", "application/json")
+
+	defer func() {
+		if err := recover(); err != nil {
+			log.Printf("PANIC in HandleVodSync: %v", err)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"success": false,
+				"error":   fmt.Sprintf("Internal Server Error (Panic): %v", err),
+			})
+		}
+	}()
 
 	var req VodSyncRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -330,6 +361,31 @@ func HandleVodSync(w http.ResponseWriter, r *http.Request) {
 		json.NewEncoder(w).Encode(map[string]interface{}{"success": false, "error": "Failed to authenticate with Twitch"})
 		return
 	}
+
+	// We have the body and auth. Now we can start the keep-alive response for long-running VOD tasks.
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	w.WriteHeader(http.StatusOK)
+
+	kw := &keepAliveWriter{ResponseWriter: w}
+	w = kw
+
+	if f, ok := kw.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
+
+	done := make(chan struct{})
+	defer close(done)
+
+	go func() {
+		for {
+			select {
+			case <-time.After(10 * time.Second):
+				kw.KeepAlive()
+			case <-done:
+				return
+			}
+		}
+	}()
 
 	videoId, timeStr, totalSecs, clipSlug := parseTwitchUrl(req.Url)
 	var absoluteTime time.Time

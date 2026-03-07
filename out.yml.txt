@@ -1,0 +1,69 @@
+﻿commit 284062eb3093c98169a8de62ad2ebac64a86befb
+Author: iRedemption <minerendemption@gmail.com>
+Date:   Wed Mar 4 11:49:40 2026 +0000
+
+    migration: added the go framework for backend support. No longer a runnable on github pages
+
+diff --git a/docker-compose.yml b/docker-compose.yml
+index 2df02b0..99a66cb 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -5,7 +5,7 @@ services:
+       dockerfile: docker/Dockerfile
+     container_name: omnistream
+     ports:
+-      - "5500:80"
++      - "5500:8080"
+     restart: unless-stopped
+     networks:
+       - omnistream-network
+
+commit e7c1a1991e2aad3834c2d03686ea2c42dc237f08
+Author: iRedemption <minerendemption@gmail.com>
+Date:   Tue Mar 3 06:56:31 2026 +0000
+
+    chore: cleaned up root folder by moving docker files in /docker
+
+diff --git a/docker-compose.yml b/docker-compose.yml
+index 191d85a..2df02b0 100644
+--- a/docker-compose.yml
++++ b/docker-compose.yml
+@@ -1,6 +1,8 @@
+ services:
+   omnistream:
+-    build: .
++    build:
++      context: .
++      dockerfile: docker/Dockerfile
+     container_name: omnistream
+     ports:
+       - "5500:80"
+
+commit c0662a88d0360a41edb0478fceb5e571ceffe90a
+Author: iRedemption <minerendemption@gmail.com>
+Date:   Tue Mar 3 05:47:10 2026 +0000
+
+    chore: add docker configuration files for containerization
+    
+    Add .dockerignore, Dockerfile, docker-compose.yml, and nginx.conf
+    to enable containerized deployment of the application.
+
+diff --git a/docker-compose.yml b/docker-compose.yml
+new file mode 100644
+index 0000000..191d85a
+--- /dev/null
++++ b/docker-compose.yml
+@@ -0,0 +1,13 @@
++services:
++  omnistream:
++    build: .
++    container_name: omnistream
++    ports:
++      - "5500:80"
++    restart: unless-stopped
++    networks:
++      - omnistream-network
++
++networks:
++  omnistream-network:
++    driver: bridge
