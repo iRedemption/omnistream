@@ -5,7 +5,7 @@ services:
       dockerfile: docker/Dockerfile
     container_name: omnistream
     ports:
-      - "5500:8080"
+      - "${PORT}:8080"
     env_file:
       - .env
     restart: unless-stopped
